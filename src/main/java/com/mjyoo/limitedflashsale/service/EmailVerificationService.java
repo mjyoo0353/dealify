@@ -39,15 +39,17 @@ public class EmailVerificationService {
 
     public MimeMessage createVerificationMessage(String email, String token) throws MessagingException {
         MimeMessage message = emailSender.createMimeMessage();
-        String verificationLink = "http://localhost:8080/verify?token=" + token + "&email=" + email;
 
         message.addRecipients(MimeMessage.RecipientType.TO, email);
         message.setSubject("Dealify 회원가입 인증 메일입니다.");
 
         //이메일 본문 내용
         String content =
-                "아래의 코드를 입력하여 회원가입을 완료해주세요.\n" +
-                        "인증번호는 " + verificationLink + " 입니다.";
+                "<html><body>" +
+                "<h3>회원가입 인증</h3>" +
+                "<p>아래의 코드를 입력하여 회원가입을 완료해주세요.</p>" +
+                "인증번호는 " + token + " 입니다." +
+                "</body></html>";
 
         message.setText(content, "UTF-8", "html");
         return message;
@@ -55,7 +57,7 @@ public class EmailVerificationService {
 
     private String createVerificationToken(String email) {
         // 이메일 인증에 필요한 URL 생성
-        String token = UUID.randomUUID().toString();
+        String token = UUID.randomUUID().toString().replace("-", "").substring(0, 6);
         // 토큰을 DB에 저장
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다."));

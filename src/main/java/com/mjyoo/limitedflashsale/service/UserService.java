@@ -14,7 +14,6 @@ import java.util.Optional;
 public class UserService {
 
     private final UserRepository userRepository;
-    private final EmailVerificationService emailVerificationService;
 
     public void signup(SignupRequestDto requestDto) throws MessagingException {
         String username = requestDto.getUsername();
@@ -43,10 +42,5 @@ public class UserService {
                 .isEmailVerified(false) //이메일 인증 전 상태
                 .build();
         userRepository.save(user);
-
-        //인증 이메일 발송
-        emailVerificationService.sendVerificationEmail(email);
     }
-
-
 }
