@@ -1,9 +1,7 @@
 package com.mjyoo.limitedflashsale.entity;
 
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
 import java.util.List;
 
@@ -12,6 +10,7 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
+@Getter @Setter
 public class User {
 
     @Id
@@ -32,6 +31,8 @@ public class User {
 
     @Column(nullable = false)
     private String address;
+
+    private boolean isEmailVerified; // 이메일 인증 상태
 
     @OneToOne(mappedBy = "user")
     private Cart cart;
