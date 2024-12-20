@@ -1,7 +1,6 @@
 package com.mjyoo.limitedflashsale.controller;
 
 import com.mjyoo.limitedflashsale.dto.SignupRequestDto;
-import com.mjyoo.limitedflashsale.dto.UserInfoDto;
 import com.mjyoo.limitedflashsale.service.UserService;
 import jakarta.mail.MessagingException;
 import jakarta.validation.Valid;

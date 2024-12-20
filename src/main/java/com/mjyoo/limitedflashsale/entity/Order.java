@@ -2,16 +2,17 @@ package com.mjyoo.limitedflashsale.entity;
 
 import jakarta.persistence.*;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 
 import java.math.BigDecimal;
-import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
 @Entity
-@Table(name = "orders")
 @Getter
-public class Order {
+@NoArgsConstructor
+@Table(name = "orders")
+public class Order extends Timestamped {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -23,9 +24,6 @@ public class Order {
 
     @Column(name = "total_amount", nullable = false, precision = 10, scale = 2)
     private BigDecimal totalAmount;
-
-    @Column(name = "order_date", nullable = false)
-    private LocalDateTime orderDate;
 
     @ManyToOne
     @JoinColumn(name = "user_id", nullable = false)

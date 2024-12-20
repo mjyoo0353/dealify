@@ -1,10 +1,13 @@
 package com.mjyoo.limitedflashsale.entity;
 
 import jakarta.persistence.*;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
 
 @Entity
-@Table(name = "cart_item")
-public class CartItem {
+@Getter
+@NoArgsConstructor
+public class CartProduct extends Timestamped{
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

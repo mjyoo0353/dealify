@@ -1,13 +1,15 @@
 package com.mjyoo.limitedflashsale.entity;
 
 import jakarta.persistence.*;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
 
 import java.math.BigDecimal;
-import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "payment")
-public class Payment {
+@Getter
+@NoArgsConstructor
+public class Payment extends Timestamped {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -16,14 +18,10 @@ public class Payment {
     @Column(nullable = false, precision = 10, scale = 2)
     private BigDecimal amount;
 
-    @Column(name = "payment_time", nullable = false)
-    private LocalDateTime paymentTime;
+    @Column(nullable = false)
+    private String status;
 
-    @Column(name = "payment_status", nullable = false)
-    private String paymentStatus;
-
-    @OneToOne
-    @JoinColumn(name = "order_id", nullable = false)
+    @OneToOne(mappedBy = "payment")
     private Order order;
 
 

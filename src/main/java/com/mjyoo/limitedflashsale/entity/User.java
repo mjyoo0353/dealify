@@ -6,12 +6,11 @@ import lombok.*;
 import java.util.List;
 
 @Entity
-@Table(name = "user")
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
 @Getter @Setter
-public class User {
+public class User extends Timestamped{
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

@@ -46,7 +46,7 @@ public class EmailVerificationService {
         //이메일 본문 내용
         String content =
                 "<html><body>" +
-                "<h3>회원가입 인증</h3>" +
+                "<h3>Dealify 회원가입 인증</h3>" +
                 "<p>아래의 코드를 입력하여 회원가입을 완료해주세요.</p>" +
                 "인증번호는 " + token + " 입니다." +
                 "</body></html>";
