@@ -18,7 +18,6 @@ import java.util.List;
 public class ProductService {
 
     private final ProductRepository productRepository;
-    private final InventoryRepository inventoryRepository;
     private static final BigDecimal MIN_PRICE = new BigDecimal("1");
 
     // 상품 조회
@@ -42,13 +41,14 @@ public class ProductService {
 
     // 상품 수정
     @Transactional
-    public ProductResponseDto updateProduct(Long productId, ProductRequestDto requestDto) {
+    public ProductResponseDto updateProduct(Long productId, ProductRequestDto requestDto, int stock) {
         BigDecimal price = requestDto.getPrice();
         if (price.compareTo(MIN_PRICE) < 0) {
-            throw new IllegalArgumentException("상품의 가격은 1원 이상이어야 합니다.");
+            throw new IllegalArgumentException("상품의 가격은 $1 이상이어야 합니다.");
         }
         Product product = getProductOrThrow(productId);
         product.update(requestDto);
+        product.getInventory().updateStock(stock, product);
         return new ProductResponseDto(product);
     }
 

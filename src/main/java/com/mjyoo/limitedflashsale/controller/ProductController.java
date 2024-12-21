@@ -38,7 +38,7 @@ public class ProductController {
     @PutMapping("/{productId}")
     public ProductResponseDto updateProduct(@PathVariable Long productId,
                                             @RequestBody ProductRequestDto requestDto) {
-        return productService.updateProduct(productId, requestDto);
+        return productService.updateProduct(productId, requestDto, requestDto.getStock());
     }
 
     @DeleteMapping("/{productId}")
