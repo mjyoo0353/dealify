@@ -16,11 +16,12 @@ public class Inventory extends Timestamped {
     @Column(nullable = false)
     private int stock;
 
-    @OneToOne
+    @OneToOne(cascade = CascadeType.ALL)
     @JoinColumn(name = "product_id")
     private Product product;
 
-    public Inventory(int stock) {
+    public Inventory(int stock, Product product) {
         this.stock = stock;
+        this.product = product;
     }
 }

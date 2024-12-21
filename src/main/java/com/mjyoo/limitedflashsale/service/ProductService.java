@@ -2,7 +2,9 @@ package com.mjyoo.limitedflashsale.service;
 
 import com.mjyoo.limitedflashsale.dto.ProductRequestDto;
 import com.mjyoo.limitedflashsale.dto.ProductResponseDto;
+import com.mjyoo.limitedflashsale.entity.Inventory;
 import com.mjyoo.limitedflashsale.entity.Product;
+import com.mjyoo.limitedflashsale.repository.InventoryRepository;
 import com.mjyoo.limitedflashsale.repository.ProductRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -16,6 +18,7 @@ import java.util.List;
 public class ProductService {
 
     private final ProductRepository productRepository;
+    private final InventoryRepository inventoryRepository;
     private static final BigDecimal MIN_PRICE = new BigDecimal("1");
 
     // 상품 조회
@@ -31,8 +34,8 @@ public class ProductService {
     }
 
     // 상품 생성
-    public ProductResponseDto createProduct(ProductRequestDto requestDto) {
-        Product product = new Product(requestDto);
+    public ProductResponseDto createProduct(ProductRequestDto requestDto, int stock) {
+        Product product = new Product(requestDto, stock);
         productRepository.save(product);
         return new ProductResponseDto(product);
     }

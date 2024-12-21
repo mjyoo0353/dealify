@@ -3,13 +3,14 @@ package com.mjyoo.limitedflashsale.controller;
 import com.mjyoo.limitedflashsale.dto.ProductRequestDto;
 import com.mjyoo.limitedflashsale.dto.ProductResponseDto;
 import com.mjyoo.limitedflashsale.service.ProductService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
 @RestController
-@RequestMapping("/products")
+@RequestMapping("/api/products")
 @RequiredArgsConstructor
 public class ProductController {
 
@@ -29,8 +30,8 @@ public class ProductController {
 
     //상품 생성
     @PostMapping
-    public ProductResponseDto createProduct(@RequestBody ProductRequestDto requestDto) {
-        return productService.createProduct(requestDto);
+    public ProductResponseDto createProduct(@Valid @RequestBody ProductRequestDto requestDto) {
+        return productService.createProduct(requestDto, requestDto.getStock());
     }
 
     //상품 수정

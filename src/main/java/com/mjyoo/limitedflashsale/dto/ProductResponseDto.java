@@ -5,7 +5,6 @@ import com.mjyoo.limitedflashsale.entity.Product;
 import lombok.Getter;
 
 import java.math.BigDecimal;
-import java.time.LocalDateTime;
 
 @Getter
 public class ProductResponseDto {
@@ -18,6 +17,6 @@ public class ProductResponseDto {
         this.id = product.getId();
         this.name = product.getName();
         this.price = product.getPrice();
-        this.stock = product.getStock();
+        this.stock = product.getInventory().getStock();
     }
 }

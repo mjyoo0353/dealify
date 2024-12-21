@@ -7,16 +7,13 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 import java.math.BigDecimal;
-import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
 @Entity
-@Table(name = "product")
 @Getter
 @NoArgsConstructor
-@AllArgsConstructor
-public class Product {
+public class Product extends Timestamped {
 
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -27,27 +24,27 @@ public class Product {
     @Column(nullable = false, precision = 10, scale = 2)
     private BigDecimal price; //상품 가격
 
-    @Column(nullable = false)
-    private int stock; //상품 재고
+    @ManyToOne
+    @JoinColumn(name = "event_id")
+    private Event event;
 
-    @OneToOne(mappedBy = "product")
-    private SaleEvent saleEvent;
+    @OneToOne(mappedBy = "product", cascade = CascadeType.ALL)
+    private Inventory inventory;
 
     @OneToMany(mappedBy = "product")
     private List<OrderProduct> orderProductList = new ArrayList<>();
 
     @OneToMany(mappedBy = "product")
-    private List<CartItem> cartItemList = new ArrayList<>();
+    private List<CartProduct> cartProductList = new ArrayList<>();
 
-    public Product(ProductRequestDto requestDto) {
+    public Product(ProductRequestDto requestDto, int stock) {
         this.name = requestDto.getName();
         this.price = requestDto.getPrice();
-        this.stock = requestDto.getStock();
+        this.inventory = new Inventory(stock, this);
     }
 
     public void update(ProductRequestDto requestDto) {
         this.name = requestDto.getName();
         this.price = requestDto.getPrice();
-        this.stock = requestDto.getStock();
     }
 }
