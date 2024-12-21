@@ -5,6 +5,7 @@ import com.mjyoo.limitedflashsale.entity.User;
 import com.mjyoo.limitedflashsale.repository.UserRepository;
 import jakarta.mail.MessagingException;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.util.Optional;
@@ -14,11 +15,11 @@ import java.util.Optional;
 public class UserService {
 
     private final UserRepository userRepository;
-
+    private final PasswordEncoder passwordEncoder;
     public void signup(SignupRequestDto requestDto) throws MessagingException {
         String username = requestDto.getUsername();
         String email = requestDto.getEmail();
-        String password = requestDto.getPassword();
+        String encodedPassword = passwordEncoder.encode(requestDto.getPassword());
 
         //email 중복 확인
         Optional<User> checkEmail = userRepository.findByEmail(email);
@@ -36,7 +37,7 @@ public class UserService {
         User user = User.builder()
                 .email(email)
                 .username(username)
-                .password(password)
+                .password(encodedPassword)
                 .phoneNumber(requestDto.getPhoneNumber())
                 .address(requestDto.getAddress())
                 .isEmailVerified(false) //이메일 인증 전 상태
