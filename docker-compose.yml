@@ -16,7 +16,7 @@ services: #컨테이너 목록
     container_name: my-app
     restart: always
     build:
-      context: .. #현재 디렉토리에서 빌드
+      context: .   #현재 디렉토리에서 빌드
       dockerfile: Dockerfile
     ports:
       - "8081:8080" #로컬 8081 포트와 컨테이너 내의 8080 포트를 매핑

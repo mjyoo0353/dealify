@@ -7,6 +7,7 @@ COPY . .
 RUN ./gradlew bootJar
 
 # Step 2: 실행 스테이지
+#alpine 또는 slim버전으로 사용하기
 FROM openjdk:21-jdk-slim
 WORKDIR /app
 # 빌드된 JAR 파일 복사
