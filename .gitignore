@@ -18,8 +18,7 @@ bin/
 !**/src/test/**/bin/
 
 ### Environtment Files ###
-application.properties
-*.yml
+/application-secrets.yml
 *.env
 
 ### IntelliJ IDEA ###
