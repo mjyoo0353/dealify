@@ -1,13 +1,12 @@
 package com.mjyoo.limitedflashsale.controller;
 
-import com.mjyoo.limitedflashsale.dto.SignupRequestDto;
+import com.mjyoo.limitedflashsale.dto.*;
 import com.mjyoo.limitedflashsale.service.UserService;
 import jakarta.mail.MessagingException;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
-import org.springframework.stereotype.Controller;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
 
@@ -15,7 +14,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 @Slf4j
-@Controller
+@RestController
 @RequiredArgsConstructor
 @RequestMapping("/api")
 public class UserController {
@@ -34,4 +33,15 @@ public class UserController {
         return ResponseEntity.ok("회원가입에 성공했습니다.");
     }
 
+    //회원 정보 조회
+    @GetMapping("/user/{id}")
+    public UserInfoDto getUserInfo(@PathVariable Long id) {
+        return userService.getUserById(id);
+    }
+
+    //회원 리스트 조회
+    @GetMapping("/user/list")
+    public UserInfoListDto getUserList() {
+        return userService.getUserList();
+    }
 }
