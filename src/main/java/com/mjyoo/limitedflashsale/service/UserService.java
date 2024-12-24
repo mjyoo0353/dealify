@@ -1,9 +1,11 @@
 package com.mjyoo.limitedflashsale.service;
 
-import com.mjyoo.limitedflashsale.dto.SignupRequestDto;
-import com.mjyoo.limitedflashsale.dto.UserInfoDto;
-import com.mjyoo.limitedflashsale.dto.UserInfoListDto;
+import com.mjyoo.limitedflashsale.dto.requestDto.SignupRequestDto;
+import com.mjyoo.limitedflashsale.dto.responseDto.UserResponseDto;
+import com.mjyoo.limitedflashsale.dto.responseDto.UserListResponseDto;
 import com.mjyoo.limitedflashsale.entity.User;
+import com.mjyoo.limitedflashsale.entity.UserRoleEnum;
+import com.mjyoo.limitedflashsale.jwt.JwtUtil;
 import com.mjyoo.limitedflashsale.repository.UserRepository;
 import jakarta.mail.MessagingException;
 import lombok.RequiredArgsConstructor;
@@ -20,6 +22,9 @@ public class UserService {
 
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
+    private final JwtUtil jwtUtil;
+    // ADMIN_TOKEN
+    private final String ADMIN_TOKEN = "AAABnvxRVklrnYxKZ0aHgTBcXukeZygoC";
 
     public void signup(SignupRequestDto requestDto) throws MessagingException {
         String username = requestDto.getUsername();
@@ -38,6 +43,15 @@ public class UserService {
             throw new IllegalArgumentException("이미 사용중인 사용자 이름입니다.");
         }
 
+        //사용자 Role 확인
+        UserRoleEnum role = UserRoleEnum.USER;
+        if (requestDto.isAdmin()) {
+            if (!ADMIN_TOKEN.equals(requestDto.getAdminToken())) {
+                throw new IllegalArgumentException("관리자 암호가 틀려 등록이 불가능합니다.");
+            }
+            role = UserRoleEnum.ADMIN;
+        }
+
         //사용자 등록
         User user = User.builder()
                 .email(email)
@@ -46,38 +60,40 @@ public class UserService {
                 .phoneNumber(requestDto.getPhoneNumber())
                 .address(requestDto.getAddress())
                 .isEmailVerified(false) //이메일 인증 전 상태
+                .role(role)
                 .build();
         userRepository.save(user);
     }
 
     //회원 정보 조회
-    public UserInfoDto getUserById(Long id) {
+    public UserResponseDto getUser(Long id) {
         User user = userRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("user not found"));
-        return getUserInfoDto(user);
+        return getUserInfo(user);
     }
 
     //회원 리스트 조회
-    public UserInfoListDto getUserList() {
+    public UserListResponseDto getUserList() {
         List<User> userList = userRepository.findAll();
-        List<UserInfoDto> userInfoList = new ArrayList<>();
+        List<UserResponseDto> userInfoList = new ArrayList<>();
 
         for (User user : userList) {
-            UserInfoDto userInfoDto = getUserInfoDto(user);
-            userInfoList.add(userInfoDto);
+            UserResponseDto userResponseDto = getUserInfo(user);
+            userInfoList.add(userResponseDto);
         }
         long totalUser = userRepository.count(); //전체 회원 수
-        return new UserInfoListDto(userInfoList, totalUser);
+        return new UserListResponseDto(userInfoList, totalUser);
     }
 
-    private UserInfoDto getUserInfoDto(User user) {
-        return UserInfoDto.builder()
+    private UserResponseDto getUserInfo(User user) {
+        return UserResponseDto.builder()
                 .id(user.getId())
                 .username(user.getUsername())
                 .email(user.getEmail())
                 .phoneNumber(user.getPhoneNumber())
                 .address(user.getAddress())
                 .isEmailVerified(user.isEmailVerified())
+                .role(user.getRole())
                 .build();
     }
 

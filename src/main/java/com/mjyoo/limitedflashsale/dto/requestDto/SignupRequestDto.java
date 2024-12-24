@@ -1,4 +1,4 @@
-package com.mjyoo.limitedflashsale.dto;
+package com.mjyoo.limitedflashsale.dto.requestDto;
 
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotNull;
@@ -24,4 +24,7 @@ public class SignupRequestDto {
 
     @NotNull(message = "주소를 입력해주세요.")
     private String address;
+
+    private boolean admin = false;
+    private String adminToken = "";
 }

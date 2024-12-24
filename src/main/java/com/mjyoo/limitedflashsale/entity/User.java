@@ -33,6 +33,9 @@ public class User extends Timestamped{
 
     private boolean isEmailVerified; // 이메일 인증 상태
 
+    @Enumerated(EnumType.STRING)
+    private UserRoleEnum role;
+
     @OneToOne(mappedBy = "user")
     private Cart cart;
 

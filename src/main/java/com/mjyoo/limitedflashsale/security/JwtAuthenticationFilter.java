@@ -1,7 +1,8 @@
 package com.mjyoo.limitedflashsale.security;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.mjyoo.limitedflashsale.dto.LoginRequestDto;
+import com.mjyoo.limitedflashsale.dto.requestDto.LoginRequestDto;
+import com.mjyoo.limitedflashsale.entity.UserRoleEnum;
 import com.mjyoo.limitedflashsale.jwt.JwtUtil;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
@@ -50,9 +51,10 @@ public class JwtAuthenticationFilter extends UsernamePasswordAuthenticationFilte
     protected void successfulAuthentication(HttpServletRequest request, HttpServletResponse response, FilterChain chain, Authentication authResult) throws IOException, ServletException {
         log.info("로그인 성공 및 JWT 생성");
         String email = ((UserDetailsImpl) authResult.getPrincipal()).getEmail();
+        UserRoleEnum role = ((UserDetailsImpl) authResult.getPrincipal()).getUser().getRole();
 
-        String token = jwtUtil.createToken(email);
-        jwtUtil.addJwtToCookie(token, response);
+        String token = jwtUtil.createToken(email, role);
+        response.addHeader(JwtUtil.AUTHORIZATION_HEADER, token);
     }
 
     @Override
