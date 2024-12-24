@@ -1,8 +1,7 @@
 package com.mjyoo.limitedflashsale.entity;
 
-import com.mjyoo.limitedflashsale.dto.ProductRequestDto;
+import com.mjyoo.limitedflashsale.dto.requestDto.ProductRequestDto;
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
@@ -47,4 +46,5 @@ public class Product extends Timestamped {
         this.name = requestDto.getName();
         this.price = requestDto.getPrice();
     }
+
 }

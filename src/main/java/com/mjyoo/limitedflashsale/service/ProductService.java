@@ -1,10 +1,8 @@
 package com.mjyoo.limitedflashsale.service;
 
-import com.mjyoo.limitedflashsale.dto.ProductRequestDto;
-import com.mjyoo.limitedflashsale.dto.ProductResponseDto;
-import com.mjyoo.limitedflashsale.entity.Inventory;
+import com.mjyoo.limitedflashsale.dto.requestDto.ProductRequestDto;
+import com.mjyoo.limitedflashsale.dto.responseDto.ProductResponseDto;
 import com.mjyoo.limitedflashsale.entity.Product;
-import com.mjyoo.limitedflashsale.repository.InventoryRepository;
 import com.mjyoo.limitedflashsale.repository.ProductRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;

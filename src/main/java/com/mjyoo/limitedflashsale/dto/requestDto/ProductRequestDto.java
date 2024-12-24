@@ -1,6 +1,7 @@
-package com.mjyoo.limitedflashsale.dto;
+package com.mjyoo.limitedflashsale.dto.requestDto;
 
 
+import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
@@ -19,7 +20,7 @@ public class ProductRequestDto {
     private BigDecimal price;
 
     @NotNull(message = "재고를 입력해주세요.")
-    @Positive(message = "재고는 0보다 커야 합니다.")
+    @Min(value = 1, message = "수량은 1 이상이어야 합니다.")
     private int stock;
 
 }
