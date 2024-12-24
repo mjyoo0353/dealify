@@ -1,5 +1,6 @@
 package com.mjyoo.limitedflashsale.service;
 
+import com.mjyoo.limitedflashsale.dto.requestDto.LoginRequestDto;
 import com.mjyoo.limitedflashsale.dto.requestDto.SignupRequestDto;
 import com.mjyoo.limitedflashsale.dto.responseDto.UserResponseDto;
 import com.mjyoo.limitedflashsale.dto.responseDto.UserListResponseDto;
@@ -8,9 +9,11 @@ import com.mjyoo.limitedflashsale.entity.UserRoleEnum;
 import com.mjyoo.limitedflashsale.jwt.JwtUtil;
 import com.mjyoo.limitedflashsale.repository.UserRepository;
 import jakarta.mail.MessagingException;
+import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -63,6 +66,23 @@ public class UserService {
                 .role(role)
                 .build();
         userRepository.save(user);
+    }
+
+    //로그인
+    @Transactional
+    public void login(LoginRequestDto requestDto, HttpServletResponse response) {
+        //사용자 조회
+        User user = userRepository.findByEmail(requestDto.getEmail())
+                .orElseThrow(() -> new IllegalArgumentException("email not found"));
+
+        //비밀번호 일치 확인
+        if (!passwordEncoder.matches(requestDto.getPassword(), user.getPassword())) {
+            throw new IllegalArgumentException("password not matched");
+        }
+        //JWT 토큰 생성
+        String token = jwtUtil.createToken(user.getEmail(), user.getRole());
+        //JWT 토큰을 Response Header에 추가
+        response.addHeader("Authorization", "Bearer " + token);
     }
 
     //회원 정보 조회
