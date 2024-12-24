@@ -8,12 +8,13 @@ import com.mjyoo.limitedflashsale.entity.User;
 import com.mjyoo.limitedflashsale.entity.UserRoleEnum;
 import com.mjyoo.limitedflashsale.jwt.JwtUtil;
 import com.mjyoo.limitedflashsale.repository.UserRepository;
+import com.mjyoo.limitedflashsale.security.UserDetailsImpl;
 import jakarta.mail.MessagingException;
+import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -26,6 +27,7 @@ public class UserService {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtUtil jwtUtil;
+
     // ADMIN_TOKEN
     private final String ADMIN_TOKEN = "AAABnvxRVklrnYxKZ0aHgTBcXukeZygoC";
 
@@ -68,7 +70,7 @@ public class UserService {
         userRepository.save(user);
     }
 
-    //로그인
+    /*//로그인
     @Transactional
     public void login(LoginRequestDto requestDto, HttpServletResponse response) {
         //사용자 조회
@@ -83,6 +85,23 @@ public class UserService {
         String token = jwtUtil.createToken(user.getEmail(), user.getRole());
         //JWT 토큰을 Response Header에 추가
         response.addHeader("Authorization", "Bearer " + token);
+    }*/
+
+    //로그아웃
+    public void logout(HttpServletResponse response) {
+        //쿠키에서 JWT 삭제하기 위해 쿠키 만료 설정
+        Cookie cookie = new Cookie("Authorization", null); // "Authorization"은 쿠키 이름
+        cookie.setMaxAge(0); //쿠키 만료
+        cookie.setPath("/"); //모든 경로에서 쿠키 접근 가능하도록 설정
+        cookie.setHttpOnly(true); //JavaScript로 쿠키 접근 불가
+        response.addCookie(cookie);
+    }
+
+    //마이페이지 조회
+    public UserResponseDto getMyPage(UserDetailsImpl userDetails) {
+        User user = userRepository.findByEmail(userDetails.getUsername())
+                .orElseThrow(() -> new IllegalArgumentException("user not found"));
+        return getUserInfo(user);
     }
 
     //회원 정보 조회

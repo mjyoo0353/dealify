@@ -1,9 +1,9 @@
 package com.mjyoo.limitedflashsale.controller;
 
-import com.mjyoo.limitedflashsale.dto.requestDto.LoginRequestDto;
 import com.mjyoo.limitedflashsale.dto.requestDto.SignupRequestDto;
 import com.mjyoo.limitedflashsale.dto.responseDto.UserListResponseDto;
 import com.mjyoo.limitedflashsale.dto.responseDto.UserResponseDto;
+import com.mjyoo.limitedflashsale.security.UserDetailsImpl;
 import com.mjyoo.limitedflashsale.service.UserService;
 import jakarta.mail.MessagingException;
 import jakarta.servlet.http.HttpServletResponse;
@@ -11,6 +11,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 @Slf4j
@@ -28,11 +29,25 @@ public class UserController {
         return ResponseEntity.ok("회원가입에 성공했습니다.");
     }
 
-    //로그인
+    /*//로그인
     @PostMapping("/login")
     public ResponseEntity<String> login(@Valid @RequestBody LoginRequestDto requestDto, HttpServletResponse response) {
         userService.login(requestDto, response);
         return ResponseEntity.ok("로그인에 성공했습니다.");
+    }*/
+
+    //로그아웃
+    @PostMapping("/logout")
+    public ResponseEntity<String> logout(HttpServletResponse response) {
+        userService.logout(response);
+        return ResponseEntity.ok("로그아웃에 성공했습니다.");
+    }
+
+    //마이페이지 조회
+    @GetMapping("/mypage")
+    public ResponseEntity<UserResponseDto> getMyPage(@AuthenticationPrincipal UserDetailsImpl userDetails) {
+        UserResponseDto user = userService.getMyPage(userDetails);
+        return ResponseEntity.ok(user);
     }
 
     //회원 정보 조회
