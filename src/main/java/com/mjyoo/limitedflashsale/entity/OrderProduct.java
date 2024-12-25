@@ -1,15 +1,18 @@
 package com.mjyoo.limitedflashsale.entity;
 
+import com.mjyoo.limitedflashsale.dto.requestDto.OrderRequestDto;
 import jakarta.persistence.*;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 
 @Entity
-@Getter
+@Getter @Setter
+@Builder
 @NoArgsConstructor
-public class OrderProduct extends Timestamped { //주문 시점의 세부 정보를 저장하는 엔티티
+@AllArgsConstructor
+public class OrderProduct extends Timestamped { //주문 이력 정보 저장
 
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -17,11 +20,14 @@ public class OrderProduct extends Timestamped { //주문 시점의 세부 정보
     @Column(nullable = false)
     private String name;
 
-    @Column(nullable = false)
-    private BigDecimal subtotal; //주문한 상품의 소계 (주문 당시 가격 저장)
+    @Column(nullable = false, precision = 10, scale = 2)
+    private BigDecimal price; //주문 당시 가격 저장
 
     @Column(nullable = false)
     private int quantity; //주문한 상품의 수량
+
+    @Column(nullable = false, precision = 10, scale = 2)
+    private BigDecimal totalAmount; //주문 당시 가격 * 수량
 
     @ManyToOne
     @JoinColumn(name = "product_id", nullable = false)
@@ -30,4 +36,5 @@ public class OrderProduct extends Timestamped { //주문 시점의 세부 정보
     @ManyToOne
     @JoinColumn(name = "order_id", nullable = false)
     private Order order;
+
 }
