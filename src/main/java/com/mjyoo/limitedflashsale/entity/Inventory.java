@@ -17,8 +17,7 @@ public class Inventory extends Timestamped {
     @Column(nullable = false)
     private int stock;
 
-    @OneToOne
-    @JoinColumn(name = "product_id")
+    @OneToOne(mappedBy = "inventory")
     private Product product;
 
     public Inventory(int stock, Product product) {
