@@ -26,4 +26,12 @@ public class OrderController {
         return ResponseEntity.status(HttpStatus.CREATED).body(order);
     }
 
+    //주문 취소
+    @PutMapping("/{orderId}/cancel")
+    public ResponseEntity<String> cancelOrder(@PathVariable Long orderId,
+                                              @AuthenticationPrincipal UserDetailsImpl userDetails) {
+        orderService.cancelOrder(orderId, userDetails);
+        return ResponseEntity.ok("주문이 취소되었습니다.");
+
+    }
 }

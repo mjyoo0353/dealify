@@ -31,6 +31,9 @@ public class OrderService {
         User user = getUserByEmail(userDetails.getEmail()); // 사용자 조회
         Product product = getProductById(requestDto); // 상품 조회
 
+        //TODO 상품이 삭제되었는지 확인
+
+
         //재고 확인
         if (product.getInventory().getStock() < requestDto.getQuantity()) {
             throw new IllegalArgumentException("Out of stock.");
@@ -75,6 +78,39 @@ public class OrderService {
                 .build();
     }
 
+    //주문 취소
+    @Transactional
+    public void cancelOrder(Long orderId, UserDetailsImpl userDetails) {
+        //주문 조회
+        Order order = getOrderById(orderId);
+
+        // 주문 취소 권한 확인
+        ValidateOrderUser(userDetails, order);
+
+        // 주문 상태 변경
+        //order.setStatus(OrderStatus.CANCELED);
+        orderRepository.updateOrderStatusToCanceled(orderId, OrderStatus.CANCELED);
+
+        //취소된 주문에 대한 모든 상품 처리
+        for (OrderProduct orderProduct : order.getOrderProductList()) {
+            Product product = orderProduct.getProduct();
+            //취소된 상품 수량 재고에 추가
+            product.getInventory().setStock(product.getInventory().getStock() + orderProduct.getQuantity());
+        }
+        orderRepository.save(order);
+    }
+
+    private void ValidateOrderUser(UserDetailsImpl userDetails, Order order) {
+        if (!order.getUser().getEmail().equals(userDetails.getUser().getEmail())) {
+            throw new IllegalArgumentException("You are not authorized to cancel this order");
+        }
+    }
+
+    private Order getOrderById(Long orderId) {
+        return orderRepository.findById(orderId)
+                .orElseThrow(() -> new IllegalArgumentException("Order not found"));
+    }
+
     private Product getProductById(OrderRequestDto requestDto) {
         return productRepository.findById(requestDto.getProductId())
                 .orElseThrow(() -> new IllegalArgumentException("Product not found."));
@@ -84,6 +120,5 @@ public class OrderService {
         return userRepository.findByEmail(email)
                 .orElseThrow(() -> new IllegalArgumentException("User not found."));
     }
-
 
 }
