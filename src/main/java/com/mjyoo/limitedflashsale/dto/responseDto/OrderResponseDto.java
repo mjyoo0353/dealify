@@ -22,12 +22,12 @@ public class OrderResponseDto {
     //private BigDecimal totalAmount;
     private List<OrderProductResponseDto> orderProductList; // 주문 상품 리스트
 
-    /*public OrderResponseDto(Order order) {
+    public OrderResponseDto(Order order) {
         this.id = order.getId();
         this.status = order.getStatus();
         //this.totalAmount = order.getTotalAmount();
         this.orderProductList = order.getOrderProductList().stream()
                 .map(OrderProductResponseDto::new)
                 .collect(Collectors.toList());
-    }*/
+    }
 }

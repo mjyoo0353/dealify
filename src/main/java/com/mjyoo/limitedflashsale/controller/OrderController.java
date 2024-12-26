@@ -1,6 +1,7 @@
 package com.mjyoo.limitedflashsale.controller;
 
 import com.mjyoo.limitedflashsale.dto.requestDto.OrderRequestDto;
+import com.mjyoo.limitedflashsale.dto.responseDto.OrderListResponseDto;
 import com.mjyoo.limitedflashsale.dto.responseDto.OrderResponseDto;
 import com.mjyoo.limitedflashsale.security.UserDetailsImpl;
 import com.mjyoo.limitedflashsale.service.OrderService;
@@ -18,6 +19,21 @@ public class OrderController {
 
     private final OrderService orderService;
 
+    //주문 조회
+    @GetMapping("/{orderId}")
+    public ResponseEntity<OrderResponseDto> getOrder(@PathVariable Long orderId,
+                                                     @AuthenticationPrincipal UserDetailsImpl userDetails) {
+        OrderResponseDto order = orderService.getOrder(orderId, userDetails);
+        return ResponseEntity.ok(order);
+    }
+
+    //주문 리스트 조회
+    @GetMapping("/list")
+    public ResponseEntity<OrderListResponseDto> getOrderList(@AuthenticationPrincipal UserDetailsImpl userDetails) {
+        OrderListResponseDto orderList = orderService.getOrderList(userDetails);
+        return ResponseEntity.ok(orderList);
+    }
+
     //주문 생성
     @PostMapping()
     public ResponseEntity<OrderResponseDto> createOrder(@Valid @RequestBody OrderRequestDto requestDto,
@@ -32,6 +48,5 @@ public class OrderController {
                                               @AuthenticationPrincipal UserDetailsImpl userDetails) {
         orderService.cancelOrder(orderId, userDetails);
         return ResponseEntity.ok("주문이 취소되었습니다.");
-
     }
 }

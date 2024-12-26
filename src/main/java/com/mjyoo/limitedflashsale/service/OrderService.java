@@ -1,6 +1,7 @@
 package com.mjyoo.limitedflashsale.service;
 
 import com.mjyoo.limitedflashsale.dto.requestDto.OrderRequestDto;
+import com.mjyoo.limitedflashsale.dto.responseDto.OrderListResponseDto;
 import com.mjyoo.limitedflashsale.dto.responseDto.OrderProductResponseDto;
 import com.mjyoo.limitedflashsale.dto.responseDto.OrderResponseDto;
 import com.mjyoo.limitedflashsale.entity.*;
@@ -24,6 +25,33 @@ public class OrderService {
     private final OrderRepository orderRepository;
     private final ProductRepository productRepository;
     private final OrderProductRepository orderProductRepository;
+
+    //주문 내역 상세 조회
+    public OrderResponseDto getOrder(Long orderId, UserDetailsImpl userDetails) {
+        Order order = getOrderById(orderId);
+        ValidateOrderUser(userDetails, order);
+        return new OrderResponseDto(order);
+    }
+
+    //주문 리스트 조회
+    public OrderListResponseDto getOrderList(UserDetailsImpl userDetails) {
+        //사용자별 주문 조회
+        List<Order> orderList = orderRepository.findByUserId(userDetails.getUser().getId());
+
+        //주문 목록 변환
+        List<OrderResponseDto> orderInfoList = orderList.stream()
+                .map(OrderResponseDto::new)
+                .collect(Collectors.toList());
+
+        /*List<OrderResponseDto> orderInfoList = new ArrayList<>();
+        for (Order order : orderList) {
+            OrderResponseDto orderResponseDto = new OrderResponseDto(order);
+            orderInfoList.add(orderResponseDto);
+        }*/
+
+        long totalOrderCount = (long) orderList.size();
+        return new OrderListResponseDto(orderInfoList, totalOrderCount);
+    }
 
     //주문 생성 (단일 상품)
     @Transactional
