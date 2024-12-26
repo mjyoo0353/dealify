@@ -1,6 +1,7 @@
 package com.mjyoo.limitedflashsale.controller;
 
 import com.mjyoo.limitedflashsale.dto.requestDto.ProductRequestDto;
+import com.mjyoo.limitedflashsale.dto.responseDto.ProductListResponseDto;
 import com.mjyoo.limitedflashsale.dto.responseDto.ProductResponseDto;
 import com.mjyoo.limitedflashsale.service.ProductService;
 import jakarta.validation.Valid;
@@ -8,10 +9,9 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.List;
 
 @RestController
-@RequestMapping("/api/products")
+@RequestMapping("/api/product")
 @RequiredArgsConstructor
 public class ProductController {
 
@@ -25,10 +25,10 @@ public class ProductController {
 
     }
 
-    //상품 목록 조회
-    @GetMapping
-    public ResponseEntity<List<ProductResponseDto>> getProductList() {
-        List<ProductResponseDto> productList = productService.getProductList();
+    //상품 목록 조회 (deleted 여부에 따라 필터링)
+    @GetMapping("/list")
+    public ResponseEntity<ProductListResponseDto> getActiveProductList(@RequestParam(value = "deleted", required = false, defaultValue = "false") boolean deleted) {
+        ProductListResponseDto productList = productService.getActiveProductList(deleted);
         return ResponseEntity.ok(productList);
     }
 
@@ -49,8 +49,8 @@ public class ProductController {
 
     @DeleteMapping("/{productId}")
     public ResponseEntity<String> deleteProduct(@PathVariable Long productId) {
-        productService.deleteProduct(productId);
-        return ResponseEntity.ok("상품 삭제 완료");
+        productService.deleteProduct(productId); // 논리적 삭제
+        return ResponseEntity.ok("상품이 삭제되었습니다.");
     }
 
 }

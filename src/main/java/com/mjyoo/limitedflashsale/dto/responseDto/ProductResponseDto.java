@@ -12,6 +12,7 @@ public class ProductResponseDto {
     private String name;
     private BigDecimal price;
     private int stock;
+    private boolean isDeleted;
     private String createdAt;
     private String modifiedAt;
 
@@ -20,6 +21,7 @@ public class ProductResponseDto {
         this.name = product.getName();
         this.price = product.getPrice();
         this.stock = product.getInventory().getStock();
+        this.isDeleted = product.isDeleted();
 
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
         this.createdAt = product.getCreatedAt().format(formatter);

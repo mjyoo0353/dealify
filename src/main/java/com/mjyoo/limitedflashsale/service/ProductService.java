@@ -1,6 +1,7 @@
 package com.mjyoo.limitedflashsale.service;
 
 import com.mjyoo.limitedflashsale.dto.requestDto.ProductRequestDto;
+import com.mjyoo.limitedflashsale.dto.responseDto.ProductListResponseDto;
 import com.mjyoo.limitedflashsale.dto.responseDto.ProductResponseDto;
 import com.mjyoo.limitedflashsale.entity.Product;
 import com.mjyoo.limitedflashsale.repository.ProductRepository;
@@ -9,6 +10,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.util.ArrayList;
 import java.util.List;
 
 @Service
@@ -18,16 +20,29 @@ public class ProductService {
     private final ProductRepository productRepository;
     private static final BigDecimal MIN_PRICE = new BigDecimal("1");
 
-    // 상품 조회
+    // 단일 상품 조회 (삭제되지 않은 데이터)
     public ProductResponseDto getProduct(Long productId) {
-        Product product = getProductOrThrow(productId);
+        Product product = getProductById(productId);
         return new ProductResponseDto(product);
     }
 
-    // 상품 목록 조회
-    public List<ProductResponseDto> getProductList() {
-        List<Product> productList = productRepository.findAll();
-        return productList.stream().map(ProductResponseDto::new).toList();
+    // 상품 목록 조회 (deleted 여부 필터링)
+    public ProductListResponseDto getActiveProductList(boolean deleted) {
+        List<Product> productList;
+        Long totalProducts;
+
+        if(deleted) {
+            productList = productRepository.findDeletedProducts();
+            totalProducts = productRepository.countDeletedProducts();
+        } else {
+            productList = productRepository.findAllActive();
+            totalProducts = productRepository.countActiveProducts();
+        }
+        List<ProductResponseDto> ProductInfoList = new ArrayList<>();
+        for (Product product : productList) {
+            ProductInfoList.add(new ProductResponseDto(product));
+        }
+        return new ProductListResponseDto(ProductInfoList, totalProducts);
     }
 
     // 상품 생성
@@ -44,7 +59,7 @@ public class ProductService {
         if (price.compareTo(MIN_PRICE) < 0) {
             throw new IllegalArgumentException("상품의 가격은 $1 이상이어야 합니다.");
         }
-        Product product = getProductOrThrow(productId);
+        Product product = getProductById(productId);
         product.update(requestDto);
         product.getInventory().updateStock(stock, product);
         return new ProductResponseDto(product);
@@ -52,13 +67,14 @@ public class ProductService {
 
     // 상품 삭제
     public void deleteProduct(Long productId) {
-        Product product = getProductOrThrow(productId);
-        productRepository.delete(product);
+        Product product = getProductById(productId);
+        productRepository.delete(product); // @SQLDelete가 실행됨
     }
 
-    private Product getProductOrThrow(Long productId) {
-        Product product = productRepository.findById(productId)
-                .orElseThrow(() -> new IllegalArgumentException("해당 상품을 찾을 수 없습니다."));
-        return product;
+    private Product getProductById(Long productId) {
+        return productRepository.findById(productId)
+                .filter(product -> !product.isDeleted())
+                .orElseThrow(() -> new IllegalArgumentException("Product not found or has been deleted."));
     }
+
 }
