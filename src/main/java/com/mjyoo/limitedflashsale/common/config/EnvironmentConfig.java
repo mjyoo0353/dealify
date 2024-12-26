@@ -1,12 +1,15 @@
 package com.mjyoo.limitedflashsale.common.config;
 
 import io.github.cdimascio.dotenv.Dotenv;
+import jakarta.annotation.PostConstruct;
+import org.springframework.context.annotation.Configuration;
 import org.springframework.stereotype.Component;
 
 import java.nio.file.Files;
 import java.nio.file.Paths;
 
 @Component
+@Configuration
 public class EnvironmentConfig {
     private final Dotenv dotenv;
 
@@ -21,6 +24,13 @@ public class EnvironmentConfig {
 
     public String getAdminToken() {
         return dotenv.get("ADMIN_TOKEN");
+    }
+
+    @PostConstruct
+    public void loadEnvironmentVariables() {
+        // Set the environment variables for the database connection
+        System.setProperty("DB_USERNAME", dotenv.get("DB_USERNAME"));
+        System.setProperty("DB_PASSWORD", dotenv.get("DB_PASSWORD"));
     }
 
 
