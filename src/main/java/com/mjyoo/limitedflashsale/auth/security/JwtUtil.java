@@ -1,15 +1,16 @@
 package com.mjyoo.limitedflashsale.auth.security;
 
+import com.mjyoo.limitedflashsale.common.config.EnvironmentConfig;
 import com.mjyoo.limitedflashsale.user.entity.UserRoleEnum;
 import io.jsonwebtoken.*;
 import io.jsonwebtoken.security.Keys;
 import io.jsonwebtoken.security.SignatureException;
 import jakarta.annotation.PostConstruct;
 import jakarta.servlet.http.HttpServletRequest;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
 import java.security.Key;
@@ -18,6 +19,7 @@ import java.util.Date;
 
 @Slf4j
 @Component
+@RequiredArgsConstructor
 public class JwtUtil {
     //Header KEY 값
     public static final String AUTHORIZATION_HEADER = "Authorization";
@@ -28,21 +30,19 @@ public class JwtUtil {
     //Token 만료 시간
     private final long TOKEN_EXPIRATION_MS = 60 * 60 * 1000L; // 1시간
 
-    //WT를 암호화하거나 검증할 때 사용되는 비밀 키
-    @Value("${jwt.secret.key}") // Base64 Encode 한 SecretKey
-    private String secretKey;
     //암호화된 secretKey를 실제 사용할 수 있는 Key 객체로 변환
     private Key key;
     //JWT를 생성할 때 사용할 암호화 알고리즘 - HMAC SHA-256 사용
     private final SignatureAlgorithm signatureAlgorithm = SignatureAlgorithm.HS256;
-
     //로그 설정
     public static final Logger logger = LoggerFactory.getLogger("JWT 관련 로그");
+    private final EnvironmentConfig environmentConfig;
 
 
-    //secretKey를 디코딩해서 key 변수에 할당
     @PostConstruct
-    public void init() {
+    public void init() { //secretKey를 디코딩해서 key 변수에 할당
+        //JWT를 암호화하거나 검증할 때 사용되는 비밀 키를 Base64 디코딩하여 Key 객체로 변환
+        String secretKey = environmentConfig.getJwtSecretKey();
         byte[] bytes = Base64.getDecoder().decode(secretKey);
         key = Keys.hmacShaKeyFor(bytes);
     }

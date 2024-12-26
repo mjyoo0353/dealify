@@ -1,5 +1,6 @@
 package com.mjyoo.limitedflashsale.user.service;
 
+import com.mjyoo.limitedflashsale.common.config.EnvironmentConfig;
 import com.mjyoo.limitedflashsale.user.dto.SignupRequestDto;
 import com.mjyoo.limitedflashsale.user.dto.UserResponseDto;
 import com.mjyoo.limitedflashsale.user.dto.UserListResponseDto;
@@ -22,9 +23,8 @@ public class UserService {
 
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
-
-    // ADMIN_TOKEN
-    private final String ADMIN_TOKEN = "AAABnvxRVklrnYxKZ0aHgTBcXukeZygoC";
+    private final EnvironmentConfig environmentConfig;
+    private String ADMIN_TOKEN;
 
     public void signup(SignupRequestDto requestDto) throws MessagingException {
         String username = requestDto.getUsername();
@@ -46,6 +46,7 @@ public class UserService {
         //사용자 Role 확인
         UserRoleEnum role = UserRoleEnum.USER;
         if (requestDto.isAdmin()) {
+            ADMIN_TOKEN = environmentConfig.getAdminToken();
             if (!ADMIN_TOKEN.equals(requestDto.getAdminToken())) {
                 throw new IllegalArgumentException("관리자 암호가 틀려 등록이 불가능합니다.");
             }
