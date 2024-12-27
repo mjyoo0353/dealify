@@ -1,6 +1,9 @@
-package com.mjyoo.limitedflashsale.entity;
+package com.mjyoo.limitedflashsale.cart.entity;
 
+import com.mjyoo.limitedflashsale.user.entity.User;
 import jakarta.persistence.*;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
@@ -9,7 +12,9 @@ import java.util.List;
 
 @Entity
 @Getter
+@Builder
 @NoArgsConstructor
+@AllArgsConstructor
 public class Cart {
 
     @Id
@@ -20,6 +25,7 @@ public class Cart {
     @JoinColumn(name = "user_id", nullable = false)
     private User user;
 
-    @OneToMany(mappedBy = "cart", cascade = CascadeType.ALL)
+    @OneToMany(mappedBy = "cart")
     private List<CartProduct> cartProductList = new ArrayList<>();
+
 }
