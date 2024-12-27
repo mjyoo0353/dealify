@@ -25,7 +25,10 @@ public class Cart {
     @JoinColumn(name = "user_id", nullable = false)
     private User user;
 
-    @OneToMany(mappedBy = "cart")
+    @OneToMany(mappedBy = "cart", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<CartProduct> cartProductList = new ArrayList<>();
 
+    public Cart(User user) {
+        this.user = user;
+    }
 }
