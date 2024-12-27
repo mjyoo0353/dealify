@@ -1,5 +1,7 @@
 package com.mjyoo.limitedflashsale.product.service;
 
+import com.mjyoo.limitedflashsale.common.exception.CustomException;
+import com.mjyoo.limitedflashsale.common.exception.ErrorCode;
 import com.mjyoo.limitedflashsale.product.dto.ProductRequestDto;
 import com.mjyoo.limitedflashsale.product.dto.ProductListResponseDto;
 import com.mjyoo.limitedflashsale.product.dto.ProductResponseDto;
@@ -57,7 +59,7 @@ public class ProductService {
     public ProductResponseDto updateProduct(Long productId, ProductRequestDto requestDto, int stock) {
         BigDecimal price = requestDto.getPrice();
         if (price.compareTo(MIN_PRICE) < 0) {
-            throw new IllegalArgumentException("상품의 가격은 $1 이상이어야 합니다.");
+            throw new CustomException(ErrorCode.INVALID_PRICE);
         }
         Product product = getProductById(productId);
         product.update(requestDto);
@@ -74,7 +76,7 @@ public class ProductService {
     private Product getProductById(Long productId) {
         return productRepository.findById(productId)
                 .filter(product -> !product.isDeleted())
-                .orElseThrow(() -> new IllegalArgumentException("Product not found or has been deleted."));
+                .orElseThrow(() -> new CustomException(ErrorCode.PRODUCT_NOT_FOUND));
     }
 
 }

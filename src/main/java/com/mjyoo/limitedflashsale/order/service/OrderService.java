@@ -1,5 +1,7 @@
 package com.mjyoo.limitedflashsale.order.service;
 
+import com.mjyoo.limitedflashsale.common.exception.CustomException;
+import com.mjyoo.limitedflashsale.common.exception.ErrorCode;
 import com.mjyoo.limitedflashsale.order.dto.OrderRequestDto;
 import com.mjyoo.limitedflashsale.order.dto.OrderListResponseDto;
 import com.mjyoo.limitedflashsale.order.dto.OrderProductResponseDto;
@@ -8,8 +10,8 @@ import com.mjyoo.limitedflashsale.order.entity.Order;
 import com.mjyoo.limitedflashsale.order.entity.OrderProduct;
 import com.mjyoo.limitedflashsale.order.entity.OrderStatus;
 import com.mjyoo.limitedflashsale.product.entity.Product;
-import com.mjyoo.limitedflashsale.product.repository.OrderProductRepository;
-import com.mjyoo.limitedflashsale.product.repository.OrderRepository;
+import com.mjyoo.limitedflashsale.order.repository.OrderProductRepository;
+import com.mjyoo.limitedflashsale.order.repository.OrderRepository;
 import com.mjyoo.limitedflashsale.product.repository.ProductRepository;
 import com.mjyoo.limitedflashsale.auth.security.UserDetailsImpl;
 import com.mjyoo.limitedflashsale.user.entity.User;
@@ -71,7 +73,7 @@ public class OrderService {
 
         //재고 확인
         if (product.getInventory().getStock() < requestDto.getQuantity()) {
-            throw new IllegalArgumentException("Out of stock.");
+            throw new CustomException(ErrorCode.OUT_OF_STOCK);
         }
         //재고 업데이트 (감소)
         product.getInventory().decreaseStock(requestDto.getQuantity());
@@ -137,23 +139,23 @@ public class OrderService {
 
     private void ValidateOrderUser(UserDetailsImpl userDetails, Order order) {
         if (!order.getUser().getEmail().equals(userDetails.getUser().getEmail())) {
-            throw new IllegalArgumentException("You are not authorized to cancel this order");
+            throw new CustomException(ErrorCode.FORBIDDEN);
         }
     }
 
     private Order getOrderById(Long orderId) {
         return orderRepository.findById(orderId)
-                .orElseThrow(() -> new IllegalArgumentException("Order not found"));
+                .orElseThrow(() -> new CustomException(ErrorCode.ORDER_NOT_FOUND));
     }
 
     private Product getProductById(OrderRequestDto requestDto) {
         return productRepository.findById(requestDto.getProductId())
-                .orElseThrow(() -> new IllegalArgumentException("Product not found."));
+                .orElseThrow(() -> new CustomException(ErrorCode.PRODUCT_NOT_FOUND));
     }
 
     private User getUserByEmail(String email) {
         return userRepository.findByEmail(email)
-                .orElseThrow(() -> new IllegalArgumentException("User not found."));
+                .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
     }
 
 }

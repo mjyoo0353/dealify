@@ -1,4 +1,4 @@
-package com.mjyoo.limitedflashsale.product.repository;
+package com.mjyoo.limitedflashsale.order.repository;
 
 import com.mjyoo.limitedflashsale.order.entity.Order;
 import com.mjyoo.limitedflashsale.order.entity.OrderStatus;

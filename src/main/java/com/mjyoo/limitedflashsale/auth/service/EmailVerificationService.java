@@ -2,6 +2,8 @@ package com.mjyoo.limitedflashsale.auth.service;
 
 import com.mjyoo.limitedflashsale.auth.entity.EmailVerification;
 import com.mjyoo.limitedflashsale.auth.repository.EmailVerificationRepository;
+import com.mjyoo.limitedflashsale.common.exception.CustomException;
+import com.mjyoo.limitedflashsale.common.exception.ErrorCode;
 import com.mjyoo.limitedflashsale.user.entity.User;
 import com.mjyoo.limitedflashsale.user.repository.UserRepository;
 import jakarta.mail.MessagingException;
@@ -60,7 +62,7 @@ public class EmailVerificationService {
         String token = UUID.randomUUID().toString().replace("-", "").substring(0, 6);
         // 토큰을 DB에 저장
         User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다."));
+                .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
 
         EmailVerification emailVerification = new EmailVerification(token, user);
         emailVerificationRepository.save(emailVerification);

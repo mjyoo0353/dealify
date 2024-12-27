@@ -1,7 +1,4 @@
 spring:
-  config:
-    import: classpath:/application-secrets.yml
-
   application:
     name: LimitedFlashSale
   datasource:
@@ -19,6 +16,8 @@ spring:
   mail:
     host: smtp.gmail.com
     port: 587 # Gmail SMTP ??? port (TLS): 587 ??
+    username: ${SPRING_MAIL_USERNAME}
+    password: ${SPRING_MAIL_PASSWORD}
     properties:
       mail:
         smtp:
@@ -27,13 +26,11 @@ spring:
             enable: true
             required: true
 
-security:
-  jwt-secret-key: ${JWT_SECRET_KEY}
-
 logging:
   level:
-    org.springframework.security: DEBUG
-    org.springframework.web: INFO
-    org.springframework.http: INFO
     org.springframework: INFO
-    org.hibernate: INFO
+    #root: DEBUG
+    #org.hibernate: INFO
+    #org.springframework.security: INFO
+    #org.springframework.web: INFO
+    #org.springframework.http: INFO

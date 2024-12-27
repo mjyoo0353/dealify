@@ -1,6 +1,8 @@
 package com.mjyoo.limitedflashsale.user.service;
 
 import com.mjyoo.limitedflashsale.common.config.EnvironmentConfig;
+import com.mjyoo.limitedflashsale.common.exception.CustomException;
+import com.mjyoo.limitedflashsale.common.exception.ErrorCode;
 import com.mjyoo.limitedflashsale.user.dto.SignupRequestDto;
 import com.mjyoo.limitedflashsale.user.dto.UserResponseDto;
 import com.mjyoo.limitedflashsale.user.dto.UserListResponseDto;
@@ -34,13 +36,13 @@ public class UserService {
         //email 중복 확인
         Optional<User> checkEmail = userRepository.findByEmail(email);
         if (checkEmail.isPresent()) {
-            throw new IllegalArgumentException("이미 사용중인 Email 입니다.");
+            throw new CustomException(ErrorCode.DUPLICATED_EMAIL);
         }
 
         //회원 중복 확인
         Optional<User> checkUsername = userRepository.findByUsername(username);
         if (checkUsername.isPresent()) {
-            throw new IllegalArgumentException("이미 사용중인 사용자 이름입니다.");
+            throw new CustomException(ErrorCode.DUPLICATED_USERNAME);
         }
 
         //사용자 Role 확인
@@ -48,7 +50,7 @@ public class UserService {
         if (requestDto.isAdmin()) {
             ADMIN_TOKEN = environmentConfig.getAdminToken();
             if (!ADMIN_TOKEN.equals(requestDto.getAdminToken())) {
-                throw new IllegalArgumentException("관리자 암호가 틀려 등록이 불가능합니다.");
+                throw new CustomException(ErrorCode.INVALID_ADMIN_TOKEN);
             }
             role = UserRoleEnum.ADMIN;
         }
@@ -69,14 +71,14 @@ public class UserService {
     //마이페이지 조회
     public UserResponseDto getMyPage(UserDetailsImpl userDetails) {
         User user = userRepository.findByEmail(userDetails.getUsername())
-                .orElseThrow(() -> new IllegalArgumentException("user not found"));
+                .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
         return getUserInfo(user);
     }
 
     //회원 정보 조회
     public UserResponseDto getUser(Long id) {
         User user = userRepository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("user not found"));
+                .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
         return getUserInfo(user);
     }
 

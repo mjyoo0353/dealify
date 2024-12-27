@@ -1,11 +1,15 @@
 package com.mjyoo.limitedflashsale.auth.service;
 
 import com.mjyoo.limitedflashsale.auth.repository.EmailVerificationRepository;
+import com.mjyoo.limitedflashsale.common.exception.CustomException;
+import com.mjyoo.limitedflashsale.common.exception.ErrorCode;
+import com.mjyoo.limitedflashsale.user.entity.User;
 import com.mjyoo.limitedflashsale.user.repository.UserRepository;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @RequiredArgsConstructor
@@ -14,16 +18,16 @@ public class AuthService {
     private final EmailVerificationRepository emailVerificationRepository;
     private final UserRepository userRepository;
 
-    /*//로그인
-    @Transactional
+    //로그인
+    /*@Transactional
     public void login(LoginRequestDto requestDto, HttpServletResponse response) {
         //사용자 조회
         User user = userRepository.findByEmail(requestDto.getEmail())
-                .orElseThrow(() -> new IllegalArgumentException("email not found"));
+                .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
 
         //비밀번호 일치 확인
         if (!passwordEncoder.matches(requestDto.getPassword(), user.getPassword())) {
-            throw new IllegalArgumentException("password not matched");
+            throw new CustomException(ErrorCode.INVALID_PASSWORD);
         }
         //JWT 토큰 생성
         String token = jwtUtil.createToken(user.getEmail(), user.getRole());
