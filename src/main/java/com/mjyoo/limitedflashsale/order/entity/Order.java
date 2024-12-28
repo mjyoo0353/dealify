@@ -35,7 +35,7 @@ public class Order extends Timestamped {
     @JoinColumn(name = "payment_id", nullable = true)
     private Payment payment;
 
-    @OneToMany(mappedBy = "order")
+    @OneToMany(mappedBy = "order", cascade = {CascadeType.PERSIST, CascadeType.MERGE})
     private List<OrderProduct> orderProductList = new ArrayList<>();
 
 }

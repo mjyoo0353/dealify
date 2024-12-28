@@ -1,6 +1,5 @@
 package com.mjyoo.limitedflashsale.order.service;
 
-import com.mjyoo.limitedflashsale.cart.dto.CartOrderListRequestDto;
 import com.mjyoo.limitedflashsale.cart.dto.CartRequestDto;
 import com.mjyoo.limitedflashsale.cart.entity.Cart;
 import com.mjyoo.limitedflashsale.cart.entity.CartProduct;
@@ -10,7 +9,6 @@ import com.mjyoo.limitedflashsale.common.exception.CustomException;
 import com.mjyoo.limitedflashsale.common.exception.ErrorCode;
 import com.mjyoo.limitedflashsale.order.dto.OrderRequestDto;
 import com.mjyoo.limitedflashsale.order.dto.OrderListResponseDto;
-import com.mjyoo.limitedflashsale.order.dto.OrderProductResponseDto;
 import com.mjyoo.limitedflashsale.order.dto.OrderResponseDto;
 import com.mjyoo.limitedflashsale.order.entity.Order;
 import com.mjyoo.limitedflashsale.order.entity.OrderProduct;
@@ -27,7 +25,6 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 import java.util.stream.Collectors;
 
 
@@ -39,7 +36,6 @@ public class OrderService {
     private final ProductRepository productRepository;
     private final OrderProductRepository orderProductRepository;
     private final CartRepository cartRepository;
-    private final CartProductRepository cartProductRepository;
 
     //주문 내역 상세 조회
     public OrderResponseDto getOrder(Long orderId, User user) {
@@ -94,6 +90,81 @@ public class OrderService {
                 .totalAmount(product.getPrice().multiply(BigDecimal.valueOf(quantity)))
                 .build();
         orderProductRepository.save(orderProduct);
+
+        return order.getId();
+    }
+
+    //주문 생성 (장바구니 상품)
+    @Transactional
+    public Long createOrderFromCart(List<CartRequestDto> cartRequestDtos, User user) {
+        // 유저 장바구니 조회
+        Cart cart = cartRepository.findByUserId(user.getId())
+                .orElseThrow(() -> new CustomException(ErrorCode.CART_NOT_FOUND));
+
+        //주문 생성
+        Order order = Order.builder()
+                .user(user)
+                .status(OrderStatus.ORDERED)
+                .orderProductList(new ArrayList<>())
+                .build();
+        orderRepository.save(order);
+
+        // TODO 총 주문 금액 계산
+
+        // 주문 상품 리스트 생성
+        List<OrderProduct> orderProductList = new ArrayList<>();
+
+        // 사용자가 요청한 주문 상품 리스트를 순회하며 주문 상품 생성
+        for (CartRequestDto cartRequest : cartRequestDtos) {
+            Long productId = cartRequest.getProductId();
+            int quantity = cartRequest.getQuantity();
+
+            //사용자의 장바구니에 해당 상품이 있는지 확인
+            CartProduct cartProduct = cart.getCartProductList().stream()
+                    .filter(cp -> cp.getProduct().getId().equals(productId))
+                    .findAny()
+                    .orElseThrow(() -> new CustomException(ErrorCode.CART_PRODUCT_NOT_FOUND));
+
+            //장바구니 수량과 요청 수량이 일치하는지 검증
+            if(cartProduct.getQuantity() < quantity) {
+                throw new CustomException(ErrorCode.INVALID_QUANTITY);
+            }
+
+            //상품 조회
+            Product product = productRepository.findById(productId)
+                    .filter(prod -> !prod.isDeleted())
+                    .orElseThrow(() -> new CustomException(ErrorCode.PRODUCT_NOT_FOUND));
+
+            //재고 확인
+            if (product.getInventory().getStock() < quantity) {
+                throw new CustomException(ErrorCode.OUT_OF_STOCK);
+            }
+
+            //재고 업데이트 (감소)
+            product.getInventory().decreaseStock(quantity);
+
+            //주문 상품 생성
+            OrderProduct orderProduct = OrderProduct.builder()
+                    .order(order)
+                    .product(product)
+                    .name(product.getName())
+                    .price(product.getPrice())
+                    .quantity(quantity)
+                    .totalAmount(product.getPrice().multiply(BigDecimal.valueOf(quantity)))
+                    .build();
+            //주문 상품 리스트에 추가
+            orderProductList.add(orderProduct);
+
+            //장바구니에서 주문한 상품만 제거
+            cart.getCartProductList().remove(cartProduct);
+        }
+
+        //주문 상품 리스트에 주문 상품 추가
+        order.getOrderProductList().addAll(orderProductList);
+        orderProductRepository.saveAll(orderProductList);
+
+        //변경된 장바구니 저장
+        cartRepository.save(cart);
 
         return order.getId();
     }

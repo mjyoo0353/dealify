@@ -1,6 +1,6 @@
 package com.mjyoo.limitedflashsale.order.controller;
 
-import com.mjyoo.limitedflashsale.cart.dto.CartOrderListRequestDto;
+import com.mjyoo.limitedflashsale.cart.dto.CartRequestDto;
 import com.mjyoo.limitedflashsale.common.dto.ApiResponse;
 import com.mjyoo.limitedflashsale.order.dto.OrderRequestDto;
 import com.mjyoo.limitedflashsale.order.dto.OrderListResponseDto;
@@ -14,6 +14,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
+
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/api/order")
@@ -24,7 +26,7 @@ public class OrderController {
     //주문 조회
     @GetMapping("/{orderId}")
     public ResponseEntity<ApiResponse<?>> getOrder(@PathVariable Long orderId,
-                                                     @AuthenticationPrincipal UserDetailsImpl userDetails) {
+                                                   @AuthenticationPrincipal UserDetailsImpl userDetails) {
         User user = userDetails.getUser();
         OrderResponseDto order = orderService.getOrder(orderId, user);
         return ResponseEntity.ok(ApiResponse.success(order));
@@ -41,10 +43,18 @@ public class OrderController {
     //단일 상품 주문 생성
     @PostMapping("/create")
     public ResponseEntity<ApiResponse<?>> createOrder(@Valid @RequestBody OrderRequestDto requestDto,
-                                        @AuthenticationPrincipal UserDetailsImpl userDetails) {
+                                                      @AuthenticationPrincipal UserDetailsImpl userDetails) {
         User user = userDetails.getUser();
         Long orderId = orderService.createOrder(requestDto, user);
-        return ResponseEntity.ok(ApiResponse.success("주문이 완료되었습니다. 주문 ID: " + orderId, orderId));
+        return ResponseEntity.ok(ApiResponse.success("주문이 완료되었습니다.", orderId));
+    }
+
+    @PostMapping("/create-from-cart")
+    public ResponseEntity<ApiResponse<?>> createOrderFromCart(@RequestBody List<CartRequestDto> cartRequestDtos,
+                                                              @AuthenticationPrincipal UserDetailsImpl userDetails) {
+        User user = userDetails.getUser();
+        Long orderId = orderService.createOrderFromCart(cartRequestDtos, user);
+        return ResponseEntity.ok(ApiResponse.success("주문이 생성되었습니다.", orderId));
     }
 
     //주문 취소
