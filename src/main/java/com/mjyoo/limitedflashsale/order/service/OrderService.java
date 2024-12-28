@@ -1,5 +1,11 @@
 package com.mjyoo.limitedflashsale.order.service;
 
+import com.mjyoo.limitedflashsale.cart.dto.CartOrderListRequestDto;
+import com.mjyoo.limitedflashsale.cart.dto.CartRequestDto;
+import com.mjyoo.limitedflashsale.cart.entity.Cart;
+import com.mjyoo.limitedflashsale.cart.entity.CartProduct;
+import com.mjyoo.limitedflashsale.cart.repository.CartProductRepository;
+import com.mjyoo.limitedflashsale.cart.repository.CartRepository;
 import com.mjyoo.limitedflashsale.common.exception.CustomException;
 import com.mjyoo.limitedflashsale.common.exception.ErrorCode;
 import com.mjyoo.limitedflashsale.order.dto.OrderRequestDto;
@@ -13,9 +19,7 @@ import com.mjyoo.limitedflashsale.product.entity.Product;
 import com.mjyoo.limitedflashsale.order.repository.OrderProductRepository;
 import com.mjyoo.limitedflashsale.order.repository.OrderRepository;
 import com.mjyoo.limitedflashsale.product.repository.ProductRepository;
-import com.mjyoo.limitedflashsale.auth.security.UserDetailsImpl;
 import com.mjyoo.limitedflashsale.user.entity.User;
-import com.mjyoo.limitedflashsale.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -23,6 +27,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 
@@ -30,22 +35,23 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class OrderService {
 
-    private final UserRepository userRepository;
     private final OrderRepository orderRepository;
     private final ProductRepository productRepository;
     private final OrderProductRepository orderProductRepository;
+    private final CartRepository cartRepository;
+    private final CartProductRepository cartProductRepository;
 
     //주문 내역 상세 조회
-    public OrderResponseDto getOrder(Long orderId, UserDetailsImpl userDetails) {
+    public OrderResponseDto getOrder(Long orderId, User user) {
         Order order = getOrderById(orderId);
-        ValidateOrderUser(userDetails, order);
+        ValidateOrderUser(user, order);
         return new OrderResponseDto(order);
     }
 
     //주문 리스트 조회
-    public OrderListResponseDto getOrderList(UserDetailsImpl userDetails) {
+    public OrderListResponseDto getOrderList(User user) {
         //사용자별 주문 조회
-        List<Order> orderList = orderRepository.findByUserId(userDetails.getUser().getId());
+        List<Order> orderList = orderRepository.findByUserId(user.getId());
 
         //주문 목록 변환
         List<OrderResponseDto> orderInfoList = orderList.stream()
@@ -64,65 +70,42 @@ public class OrderService {
 
     //주문 생성 (단일 상품)
     @Transactional
-    public OrderResponseDto createOrder(OrderRequestDto requestDto, UserDetailsImpl userDetails) {
-        User user = getUserByEmail(userDetails.getEmail()); // 사용자 조회
-        Product product = getProductById(requestDto); // 상품 조회
-
-        //TODO 상품이 삭제되었는지 확인
-
-
-        //재고 확인
-        if (product.getInventory().getStock() < requestDto.getQuantity()) {
-            throw new CustomException(ErrorCode.OUT_OF_STOCK);
-        }
+    public Long createOrder(OrderRequestDto requestDto, User user) {
+        //상품 조회 및 재고 확인
+        int quantity = requestDto.getQuantity();
+        Product product = getValidProduct(requestDto.getProductId(), quantity);
         //재고 업데이트 (감소)
-        product.getInventory().decreaseStock(requestDto.getQuantity());
-
-        //주문 상품 생성
-        OrderProduct orderProduct = OrderProduct.builder()
-                .product(product)
-                .name(product.getName())
-                .price(product.getPrice())
-                .quantity(requestDto.getQuantity())
-                .totalAmount(product.getPrice().multiply(BigDecimal.valueOf(requestDto.getQuantity())))
-                .build();
-
-        // 주문 상품 리스트에 추가
-        List<OrderProduct> orderProductList = new ArrayList<>();
-        orderProductList.add(orderProduct);
+        product.getInventory().decreaseStock(quantity);
 
         //주문 생성
         Order order = Order.builder()
                 .user(user)
                 .status(OrderStatus.ORDERED)
-                .orderProductList(orderProductList)
                 .build();
-
-        //양방향 관계를 위해 orderProduct에 Order 객체 설정
-        orderProduct.setOrder(order);
-
         orderRepository.save(order);
+
+        //주문 상품 생성
+        OrderProduct orderProduct = OrderProduct.builder()
+                .order(order)
+                .product(product)
+                .name(product.getName())
+                .price(product.getPrice())
+                .quantity(quantity)
+                .totalAmount(product.getPrice().multiply(BigDecimal.valueOf(quantity)))
+                .build();
         orderProductRepository.save(orderProduct);
 
-        return OrderResponseDto.builder()
-                .id(order.getId())
-                .status(order.getStatus())
-                //orderProductList를 OrderProductResponseDto로 변환
-                .orderProductList(order.getOrderProductList()
-                        .stream()
-                        .map(OrderProductResponseDto::new)
-                        .collect(Collectors.toList()))
-                .build();
+        return order.getId();
     }
 
     //주문 취소
     @Transactional
-    public void cancelOrder(Long orderId, UserDetailsImpl userDetails) {
+    public void cancelOrder(Long orderId, User user) {
         //주문 조회
         Order order = getOrderById(orderId);
 
         // 주문 취소 권한 확인
-        ValidateOrderUser(userDetails, order);
+        ValidateOrderUser(user, order);
 
         // 주문 상태 변경
         //order.setStatus(OrderStatus.CANCELED);
@@ -137,8 +120,21 @@ public class OrderService {
         orderRepository.save(order);
     }
 
-    private void ValidateOrderUser(UserDetailsImpl userDetails, Order order) {
-        if (!order.getUser().getEmail().equals(userDetails.getUser().getEmail())) {
+    private Product getValidProduct(Long productId, int quantity) {
+        //삭제되지 않은 상품 조회
+        Product product = productRepository.findById(productId)
+                .filter(product1 -> !product1.isDeleted())
+                .orElseThrow(() -> new CustomException(ErrorCode.PRODUCT_NOT_FOUND));
+
+        //재고 확인
+        if (product.getInventory().getStock() < quantity) {
+            throw new CustomException(ErrorCode.OUT_OF_STOCK);
+        }
+        return product;
+    }
+
+    private void ValidateOrderUser(User user, Order order) {
+        if (!order.getUser().getEmail().equals(user.getEmail())) {
             throw new CustomException(ErrorCode.FORBIDDEN);
         }
     }
@@ -146,16 +142,6 @@ public class OrderService {
     private Order getOrderById(Long orderId) {
         return orderRepository.findById(orderId)
                 .orElseThrow(() -> new CustomException(ErrorCode.ORDER_NOT_FOUND));
-    }
-
-    private Product getProductById(OrderRequestDto requestDto) {
-        return productRepository.findById(requestDto.getProductId())
-                .orElseThrow(() -> new CustomException(ErrorCode.PRODUCT_NOT_FOUND));
-    }
-
-    private User getUserByEmail(String email) {
-        return userRepository.findByEmail(email)
-                .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
     }
 
 }
