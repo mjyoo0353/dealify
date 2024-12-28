@@ -6,6 +6,7 @@ import com.mjyoo.limitedflashsale.user.dto.SignupRequestDto;
 import com.mjyoo.limitedflashsale.user.dto.UserListResponseDto;
 import com.mjyoo.limitedflashsale.user.dto.UserResponseDto;
 import com.mjyoo.limitedflashsale.auth.security.UserDetailsImpl;
+import com.mjyoo.limitedflashsale.user.entity.User;
 import com.mjyoo.limitedflashsale.user.service.UserService;
 import jakarta.mail.MessagingException;
 import jakarta.validation.Valid;
@@ -38,8 +39,9 @@ public class UserController {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                     .body(ApiResponse.fail(ErrorCode.UNAUTHORIZED.getMessage()));
         }
-        UserResponseDto user = userService.getMyPage(userDetails);
-        return ResponseEntity.ok(ApiResponse.success(user));
+        User user = userDetails.getUser();
+        UserResponseDto userResponseDto = userService.getMyPage(user);
+        return ResponseEntity.ok(ApiResponse.success(userResponseDto));
     }
 
     //회원 정보 조회

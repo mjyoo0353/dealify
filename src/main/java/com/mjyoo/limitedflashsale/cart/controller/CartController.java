@@ -6,6 +6,7 @@ import com.mjyoo.limitedflashsale.cart.dto.CartProductResponseDto;
 import com.mjyoo.limitedflashsale.auth.security.UserDetailsImpl;
 import com.mjyoo.limitedflashsale.cart.service.CartService;
 import com.mjyoo.limitedflashsale.common.dto.ApiResponse;
+import com.mjyoo.limitedflashsale.user.entity.User;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -21,7 +22,8 @@ public class CartController {
     // 장바구니 목록 조회
     @GetMapping("/list")
     public ResponseEntity<ApiResponse<?>> getCartList(@AuthenticationPrincipal UserDetailsImpl userDetails) {
-        CartListResponseDto cartList = cartService.getCartList(userDetails);
+        User user = userDetails.getUser();
+        CartListResponseDto cartList = cartService.getCartList(user);
         return ResponseEntity.ok(ApiResponse.success(cartList));
     }
 
@@ -29,7 +31,8 @@ public class CartController {
     @PostMapping("/add")
     public ResponseEntity<ApiResponse<?>> addToCart(@RequestBody CartRequestDto requestDto,
                                                             @AuthenticationPrincipal UserDetailsImpl userDetails) {
-        CartProductResponseDto cartProduct = cartService.addToCart(requestDto, userDetails);
+        User user = userDetails.getUser();
+        CartProductResponseDto cartProduct = cartService.addToCart(requestDto, user);
         return ResponseEntity.ok(ApiResponse.success(cartProduct));
     }
 
@@ -37,7 +40,8 @@ public class CartController {
     @PutMapping("/update/{productId}")
     public ResponseEntity<ApiResponse<?>> updateCart(@RequestBody CartRequestDto requestDto,
                                         @AuthenticationPrincipal UserDetailsImpl userDetails) {
-        cartService.updateCart(requestDto, userDetails);
+        User user = userDetails.getUser();
+        cartService.updateCart(requestDto, user);
         return ResponseEntity.ok(ApiResponse.success("상품 수량이 수정되었습니다."));
     }
 
@@ -45,7 +49,8 @@ public class CartController {
     @DeleteMapping("/delete/{productId}")
     public ResponseEntity<ApiResponse<?>> deleteFromCart(@PathVariable Long productId,
                                             @AuthenticationPrincipal UserDetailsImpl userDetails) {
-        cartService.deleteFromCart(productId, userDetails);
+        User user = userDetails.getUser();
+        cartService.deleteFromCart(productId, user);
         return ResponseEntity.ok(ApiResponse.success("장바구니에서 상품이 삭제되었습니다."));
     }
 

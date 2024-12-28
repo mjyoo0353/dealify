@@ -11,7 +11,7 @@ import com.mjyoo.limitedflashsale.product.entity.Product;
 import com.mjyoo.limitedflashsale.cart.repository.CartProductRepository;
 import com.mjyoo.limitedflashsale.cart.repository.CartRepository;
 import com.mjyoo.limitedflashsale.product.repository.ProductRepository;
-import com.mjyoo.limitedflashsale.auth.security.UserDetailsImpl;
+import com.mjyoo.limitedflashsale.user.entity.User;
 import lombok.RequiredArgsConstructor;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.stereotype.Service;
@@ -28,21 +28,21 @@ public class CartService {
     private final ProductRepository productRepository;
 
     // TODO: 장바구니 목록 조회
-    public CartListResponseDto getCartList(UserDetailsImpl userDetails) {
+    public CartListResponseDto getCartList(User user) {
         return null;
     }
 
     // 상품을 장바구니에 추가
     @Transactional
-    public CartProductResponseDto addToCart(CartRequestDto requestDto, UserDetailsImpl userDetails) {
+    public CartProductResponseDto addToCart(CartRequestDto requestDto, User user) {
         // 유저 장바구니 조회
-        Optional<Cart> cartOptional = cartRepository.findByUserId(userDetails.getUser().getId());
+        Optional<Cart> cartOptional = cartRepository.findByUserId(user.getId());
 
         Cart cart;
         if (cartOptional.isPresent()) {
             cart = cartOptional.get();
         } else { // 장바구니가 없으면 새로 생성
-            cart = new Cart(userDetails.getUser());
+            cart = new Cart(user);
             cartRepository.save(cart);
         }
         // 삭제되지 않은 상품만 조회
@@ -68,14 +68,14 @@ public class CartService {
     }
 
     // TODO: 장바구니 상품 수량 업데이트
-    public void updateCart(CartRequestDto requestDto, UserDetailsImpl userDetails) {
+    public void updateCart(CartRequestDto requestDto, User user) {
 
     }
 
     // 장바구니에서 상품 삭제
-    public void deleteFromCart(Long productId, UserDetailsImpl userDetails) {
+    public void deleteFromCart(Long productId, User user) {
         // 유저 장바구니 조회
-        Cart cart = cartRepository.findByUserId(userDetails.getUser().getId())
+        Cart cart = cartRepository.findByUserId(user.getId())
                 .orElseThrow(() -> new CustomException(ErrorCode.CART_NOT_FOUND));
 
         // 상품 조회

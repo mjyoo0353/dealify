@@ -69,10 +69,10 @@ public class UserService {
     }
 
     //마이페이지 조회
-    public UserResponseDto getMyPage(UserDetailsImpl userDetails) {
-        User user = userRepository.findByEmail(userDetails.getUsername())
+    public UserResponseDto getMyPage(User user) {
+        User userInfo = userRepository.findByEmail(user.getUsername())
                 .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
-        return getUserInfo(user);
+        return getUserInfo(userInfo);
     }
 
     //회원 정보 조회
