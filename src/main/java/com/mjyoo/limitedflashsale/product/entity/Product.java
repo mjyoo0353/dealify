@@ -1,8 +1,8 @@
 package com.mjyoo.limitedflashsale.product.entity;
 
 import com.mjyoo.limitedflashsale.cart.entity.CartProduct;
+import com.mjyoo.limitedflashsale.event.entity.FlashSaleProduct;
 import com.mjyoo.limitedflashsale.product.dto.ProductRequestDto;
-import com.mjyoo.limitedflashsale.event.entity.Event;
 import com.mjyoo.limitedflashsale.common.Timestamped;
 import com.mjyoo.limitedflashsale.order.entity.OrderProduct;
 import jakarta.persistence.*;
@@ -32,13 +32,12 @@ public class Product extends Timestamped {
     @Column(nullable = false)
     private boolean isDeleted = false;
 
-    @ManyToOne
-    @JoinColumn(name = "event_id")
-    private Event event;
-
     @OneToOne(fetch = FetchType.LAZY, cascade = {CascadeType.PERSIST, CascadeType.MERGE})
     @JoinColumn(name = "inventory_id")
     private Inventory inventory;
+
+    @OneToMany(mappedBy = "product")
+    private List<FlashSaleProduct> flashSaleProductList = new ArrayList<>();
 
     @OneToMany(mappedBy = "product")
     private List<OrderProduct> orderProductList = new ArrayList<>();

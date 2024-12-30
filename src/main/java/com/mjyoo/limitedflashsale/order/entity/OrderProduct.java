@@ -29,6 +29,9 @@ public class OrderProduct extends Timestamped { //주문 이력 정보 저장
     @Column(nullable = false, precision = 10, scale = 2)
     private BigDecimal totalAmount; //주문 당시 가격 * 수량
 
+    @Column(nullable = false)
+    private boolean isEventProduct; // 행사 상품 여부
+
     @ManyToOne
     @JoinColumn(name = "product_id", nullable = false)
     private Product product;

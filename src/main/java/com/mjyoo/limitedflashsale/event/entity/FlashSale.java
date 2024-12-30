@@ -1,9 +1,8 @@
 package com.mjyoo.limitedflashsale.event.entity;
 
-import com.mjyoo.limitedflashsale.product.entity.Product;
+import com.mjyoo.limitedflashsale.common.Timestamped;
 import jakarta.persistence.*;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -11,8 +10,10 @@ import java.util.List;
 
 @Entity
 @Getter
+@Builder
+@AllArgsConstructor
 @NoArgsConstructor
-public class Event {
+public class FlashSale extends Timestamped {
 
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -26,6 +27,12 @@ public class Event {
     @Column(nullable = false)
     private LocalDateTime endTime;
 
-    @OneToMany(mappedBy = "event")
-    private List<Product> productList = new ArrayList<>();
+    @Setter
+    @Column(nullable = false)
+    @Enumerated(EnumType.STRING)
+    private FlashSaleStatus status;
+
+    @OneToMany(mappedBy = "flashSale")
+    private List<FlashSaleProduct> flashSaleProductList = new ArrayList<>();
+
 }
