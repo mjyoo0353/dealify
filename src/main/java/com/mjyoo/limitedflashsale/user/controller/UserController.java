@@ -44,17 +44,23 @@ public class UserController {
         return ResponseEntity.ok(ApiResponse.success(userResponseDto));
     }
 
+    /**
+     * 아래는 관리자만 접근 가능
+     */
     //회원 정보 조회
-    @GetMapping("/{userId}")
-    public ResponseEntity<ApiResponse<UserResponseDto>> getUserInfo(@PathVariable Long userId) {
-        UserResponseDto user = userService.getUser(userId);
-        return ResponseEntity.ok(ApiResponse.success(user));
+    @GetMapping("/admin/{userId}")
+    public ResponseEntity<ApiResponse<UserResponseDto>> getUserInfo(@PathVariable Long userId,
+                                                                    @AuthenticationPrincipal UserDetailsImpl userDetails) {
+        User user = userDetails.getUser();
+        UserResponseDto userInfo = userService.getUserInfo(userId, user);
+        return ResponseEntity.ok(ApiResponse.success(userInfo));
     }
 
     //회원 리스트 조회
-    @GetMapping("/list")
-    public ResponseEntity<ApiResponse<UserListResponseDto>> getUserList() {
-        UserListResponseDto userList = userService.getUserList();
+    @GetMapping("/admin/list")
+    public ResponseEntity<ApiResponse<UserListResponseDto>> getUserList(@AuthenticationPrincipal UserDetailsImpl userDetails) {
+        User user = userDetails.getUser();
+        UserListResponseDto userList = userService.getUserList(user);
         return ResponseEntity.ok(ApiResponse.success(userList));
     }
 }

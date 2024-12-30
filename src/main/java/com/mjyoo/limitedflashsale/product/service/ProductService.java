@@ -7,6 +7,8 @@ import com.mjyoo.limitedflashsale.product.dto.ProductListResponseDto;
 import com.mjyoo.limitedflashsale.product.dto.ProductResponseDto;
 import com.mjyoo.limitedflashsale.product.entity.Product;
 import com.mjyoo.limitedflashsale.product.repository.ProductRepository;
+import com.mjyoo.limitedflashsale.user.entity.User;
+import com.mjyoo.limitedflashsale.user.entity.UserRoleEnum;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -28,8 +30,22 @@ public class ProductService {
         return new ProductResponseDto(product);
     }
 
-    // 상품 목록 조회 (deleted 여부 필터링)
-    public ProductListResponseDto getActiveProductList(boolean deleted) {
+    // 상품 목록 조회 (Active 상품만 조회)
+    public ProductListResponseDto getActiveProductList() {
+        List<Product> productList = productRepository.findAllActive();
+        Long totalProducts = productRepository.countActiveProducts();
+        List<ProductResponseDto> ProductInfoList = new ArrayList<>();
+        for (Product product : productList) {
+            ProductInfoList.add(new ProductResponseDto(product));
+        }
+        return new ProductListResponseDto(ProductInfoList, totalProducts);
+    }
+
+    // 상품 목록 조회 - 관리자용 (deleted 여부에 따라 필터링)
+    public ProductListResponseDto getAllProductList(boolean deleted, User user) {
+        //관리자 권한 확인
+        checkAdminRole(user);
+
         List<Product> productList;
         Long totalProducts;
 
@@ -48,7 +64,10 @@ public class ProductService {
     }
 
     // 상품 생성
-    public ProductResponseDto createProduct(ProductRequestDto requestDto, int stock) {
+    public ProductResponseDto createProduct(ProductRequestDto requestDto, int stock, User user) {
+        //관리자 권한 확인
+        checkAdminRole(user);
+
         Product product = new Product(requestDto, stock);
         productRepository.save(product);
         return new ProductResponseDto(product);
@@ -56,7 +75,10 @@ public class ProductService {
 
     // 상품 수정
     @Transactional
-    public ProductResponseDto updateProduct(Long productId, ProductRequestDto requestDto, int stock) {
+    public ProductResponseDto updateProduct(Long productId, ProductRequestDto requestDto, int stock, User user) {
+        //관리자 권한 확인
+        checkAdminRole(user);
+
         BigDecimal price = requestDto.getPrice();
         if (price.compareTo(MIN_PRICE) < 0) {
             throw new CustomException(ErrorCode.INVALID_PRICE);
@@ -68,7 +90,10 @@ public class ProductService {
     }
 
     // 상품 삭제
-    public void deleteProduct(Long productId) {
+    public void deleteProduct(Long productId, User user) {
+        //관리자 권한 확인
+        checkAdminRole(user);
+
         Product product = getProductById(productId);
         productRepository.delete(product); // @SQLDelete가 실행됨
     }
@@ -77,6 +102,12 @@ public class ProductService {
         return productRepository.findById(productId)
                 .filter(product -> !product.isDeleted())
                 .orElseThrow(() -> new CustomException(ErrorCode.PRODUCT_NOT_FOUND));
+    }
+
+    private void checkAdminRole(User user) {
+        if (user == null && !user.getRole().equals(UserRoleEnum.ADMIN)) {
+            throw new CustomException(ErrorCode.FORBIDDEN);
+        }
     }
 
 }

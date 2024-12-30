@@ -9,7 +9,6 @@ import com.mjyoo.limitedflashsale.user.dto.UserListResponseDto;
 import com.mjyoo.limitedflashsale.user.entity.User;
 import com.mjyoo.limitedflashsale.user.entity.UserRoleEnum;
 import com.mjyoo.limitedflashsale.user.repository.UserRepository;
-import com.mjyoo.limitedflashsale.auth.security.UserDetailsImpl;
 import jakarta.mail.MessagingException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -70,29 +69,38 @@ public class UserService {
 
     //마이페이지 조회
     public UserResponseDto getMyPage(User user) {
-        User userInfo = userRepository.findByEmail(user.getUsername())
+        User userInfo = userRepository.findByEmail(user.getEmail())
                 .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
         return getUserInfo(userInfo);
     }
 
     //회원 정보 조회
-    public UserResponseDto getUser(Long id) {
-        User user = userRepository.findById(id)
+    public UserResponseDto getUserInfo(Long id, User user) {
+        checkAdminRole(user);
+        User userInfo = userRepository.findById(id)
                 .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
-        return getUserInfo(user);
+        return getUserInfo(userInfo);
     }
 
     //회원 리스트 조회
-    public UserListResponseDto getUserList() {
+    public UserListResponseDto getUserList(User user) {
+        checkAdminRole(user);
+
         List<User> userList = userRepository.findAll();
         List<UserResponseDto> userInfoList = new ArrayList<>();
 
-        for (User user : userList) {
-            UserResponseDto userResponseDto = getUserInfo(user);
+        for (User userInfo : userList) {
+            UserResponseDto userResponseDto = getUserInfo(userInfo);
             userInfoList.add(userResponseDto);
         }
         long totalUser = userRepository.count(); //전체 회원 수
         return new UserListResponseDto(userInfoList, totalUser);
+    }
+
+    private void checkAdminRole(User user) {
+        if(!user.getRole().equals(UserRoleEnum.ADMIN)) {
+            throw new CustomException(ErrorCode.FORBIDDEN);
+        }
     }
 
     private UserResponseDto getUserInfo(User user) {
