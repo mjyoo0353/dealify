@@ -3,7 +3,6 @@ package com.mjyoo.limitedflashsale.order.service;
 import com.mjyoo.limitedflashsale.cart.dto.CartRequestDto;
 import com.mjyoo.limitedflashsale.cart.entity.Cart;
 import com.mjyoo.limitedflashsale.cart.entity.CartProduct;
-import com.mjyoo.limitedflashsale.cart.repository.CartProductRepository;
 import com.mjyoo.limitedflashsale.cart.repository.CartRepository;
 import com.mjyoo.limitedflashsale.common.exception.CustomException;
 import com.mjyoo.limitedflashsale.common.exception.ErrorCode;
@@ -25,7 +24,6 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.stream.Collectors;
 
 
 @Service
@@ -49,18 +47,21 @@ public class OrderService {
         //사용자별 주문 조회
         List<Order> orderList = orderRepository.findByUserId(user.getId());
 
-        //주문 목록 변환
-        List<OrderResponseDto> orderInfoList = orderList.stream()
-                .map(OrderResponseDto::new)
-                .collect(Collectors.toList());
-
-        /*List<OrderResponseDto> orderInfoList = new ArrayList<>();
+        //사용자가 주문한 상품 정보를 담을 리스트 생성
+        List<OrderResponseDto> orderInfoList = new ArrayList<>();
+        //주문한 목록을 순회하고
         for (Order order : orderList) {
+            //주문 정보를 OrderResponseDto로 변환하여 리스트에 추가
             OrderResponseDto orderResponseDto = new OrderResponseDto(order);
             orderInfoList.add(orderResponseDto);
-        }*/
+        }
+
+        /*List<OrderResponseDto> orderInfoList = orderList.stream()
+                .map(OrderResponseDto::new)
+                .collect(Collectors.toList());*/
 
         long totalOrderCount = (long) orderList.size();
+
         return new OrderListResponseDto(orderInfoList, totalOrderCount);
     }
 
@@ -109,7 +110,7 @@ public class OrderService {
                 .build();
         orderRepository.save(order);
 
-        // TODO 총 주문 금액 계산
+        //TODO : 장바구니에 담긴 상품 수량이 2이고 주문은 1개만 한다고 하는경우?
 
         // 주문 상품 리스트 생성
         List<OrderProduct> orderProductList = new ArrayList<>();

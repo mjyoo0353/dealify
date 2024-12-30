@@ -5,6 +5,8 @@ import com.mjyoo.limitedflashsale.common.Timestamped;
 import com.mjyoo.limitedflashsale.user.entity.User;
 import jakarta.persistence.*;
 import lombok.*;
+
+import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -24,9 +26,6 @@ public class Order extends Timestamped {
     @Column(nullable = false)
     private OrderStatus status; //주문완료, 주문취소
 
-    /*@Column(name = "total_amount", nullable = false, precision = 10, scale = 2)
-    private BigDecimal totalAmount;*/
-
     @ManyToOne
     @JoinColumn(name = "user_id", nullable = false)
     private User user;
@@ -37,5 +36,13 @@ public class Order extends Timestamped {
 
     @OneToMany(mappedBy = "order", cascade = {CascadeType.PERSIST, CascadeType.MERGE})
     private List<OrderProduct> orderProductList = new ArrayList<>();
+
+    public BigDecimal getTotalAmount() {
+        BigDecimal totalAmount = BigDecimal.ZERO;
+        for (OrderProduct orderProduct : orderProductList) {
+            totalAmount = totalAmount.add(orderProduct.getTotalAmount());
+        }
+        return totalAmount;
+    }
 
 }
