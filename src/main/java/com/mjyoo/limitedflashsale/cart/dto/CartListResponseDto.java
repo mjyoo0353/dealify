@@ -3,6 +3,7 @@ package com.mjyoo.limitedflashsale.cart.dto;
 import lombok.Builder;
 import lombok.Getter;
 
+import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -11,6 +12,6 @@ import java.util.List;
 public class CartListResponseDto {
     private List<CartProductResponseDto> cartProductList = new ArrayList<>();
     private long totalCartProducts;
-    //private BigDecimal totalAmount;
+    private BigDecimal totalAmount;
 
 }

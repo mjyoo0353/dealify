@@ -7,6 +7,7 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
+import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -30,5 +31,13 @@ public class Cart {
 
     public Cart(User user) {
         this.user = user;
+    }
+
+    public BigDecimal getTotalAmount() {
+        BigDecimal totalAmount = BigDecimal.ZERO;
+        for (CartProduct cartProduct : cartProductList) {
+            totalAmount = totalAmount.add(cartProduct.getTotalPrice());
+        }
+        return totalAmount;
     }
 }

@@ -17,6 +17,8 @@ import org.jetbrains.annotations.NotNull;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
 
 @Service
@@ -27,9 +29,28 @@ public class CartService {
     private final CartProductRepository cartProductRepository;
     private final ProductRepository productRepository;
 
-    // TODO: 장바구니 목록 조회
+    // 사용자별 장바구니 목록 조회
     public CartListResponseDto getCartList(User user) {
-        return null;
+        // 사용자의 장바구니 조회
+        Cart cart = cartRepository.findByUserId(user.getId())
+                .orElseThrow(() -> new CustomException(ErrorCode.CART_NOT_FOUND));
+
+        // 장바구니에 담긴 상품 정보를 담을 리스트 생성
+        List<CartProductResponseDto> cartInfoList = new ArrayList<>();
+        // 해당 장바구니에 담긴 모든 상품들을 조회
+        List<CartProduct> cartProductList = cart.getCartProductList();
+
+        // 장바구니에 담긴 모든 상품들을 하나씩 순회
+        for (CartProduct cartProduct : cartProductList) {
+            CartProductResponseDto cartProductResponseDto = new CartProductResponseDto(cartProduct);
+            cartInfoList.add(cartProductResponseDto);
+        }
+
+        return CartListResponseDto.builder()
+                .cartProductList(cartInfoList)
+                .totalCartProducts((long) cartInfoList.size())
+                .totalAmount(cart.getTotalAmount())
+                .build();
     }
 
     // 상품을 장바구니에 추가
@@ -47,6 +68,12 @@ public class CartService {
         }
         // 삭제되지 않은 상품만 조회
         Product product = getValidProduct(requestDto.getProductId());
+
+        // 상품 재고 확인
+        int stock = product.getInventory().getStock();
+        if (stock < requestDto.getQuantity()) {
+            throw new CustomException(ErrorCode.OUT_OF_STOCK);
+        }
 
         // 장바구니에 상품이 있는지 조회
         CartProduct cartProduct = cartProductRepository.findByCartAndProduct(cart, product)
