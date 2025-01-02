@@ -1,6 +1,6 @@
-package com.mjyoo.limitedflashsale.event.repository;
+package com.mjyoo.limitedflashsale.flashsale.repository;
 
-import com.mjyoo.limitedflashsale.event.entity.FlashSale;
+import com.mjyoo.limitedflashsale.flashsale.entity.FlashSale;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 

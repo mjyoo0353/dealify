@@ -1,4 +1,4 @@
-package com.mjyoo.limitedflashsale.event.dto;
+package com.mjyoo.limitedflashsale.flashsale.dto;
 
 import lombok.Getter;
 

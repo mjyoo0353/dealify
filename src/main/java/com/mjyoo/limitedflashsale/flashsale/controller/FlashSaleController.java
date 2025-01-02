@@ -1,9 +1,10 @@
-package com.mjyoo.limitedflashsale.event.controller;
+package com.mjyoo.limitedflashsale.flashsale.controller;
 
 import com.mjyoo.limitedflashsale.auth.security.UserDetailsImpl;
 import com.mjyoo.limitedflashsale.common.dto.ApiResponse;
-import com.mjyoo.limitedflashsale.event.dto.FlashSaleRequestDto;
-import com.mjyoo.limitedflashsale.event.service.FlashSaleService;
+import com.mjyoo.limitedflashsale.flashsale.dto.FlashSaleRequestDto;
+import com.mjyoo.limitedflashsale.flashsale.dto.FlashSaleResponseDto;
+import com.mjyoo.limitedflashsale.flashsale.service.FlashSaleService;
 import com.mjyoo.limitedflashsale.user.entity.User;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -45,8 +46,8 @@ public class FlashSaleController {
                                                       @Valid @RequestBody FlashSaleRequestDto requestDto,
                                                       @AuthenticationPrincipal UserDetailsImpl userDetails) {
         User user = userDetails.getUser();
-        flashSaleService.updateFlashSale(eventId, requestDto, user);
-        return ResponseEntity.ok(ApiResponse.success("행사가 수정되었습니다."));
+        FlashSaleResponseDto flashSaleResponseDto = flashSaleService.updateFlashSale(eventId, requestDto, user);
+        return ResponseEntity.ok(ApiResponse.success("행사가 수정되었습니다.", flashSaleResponseDto));
     }
 
     // 행사 오픈
