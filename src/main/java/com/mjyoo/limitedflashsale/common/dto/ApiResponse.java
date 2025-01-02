@@ -2,11 +2,9 @@ package com.mjyoo.limitedflashsale.common.dto;
 
 
 import lombok.Getter;
-import lombok.Setter;
 import java.time.LocalDateTime;
 
 @Getter
-@Setter
 public class ApiResponse<T> {
     private String timestamp;
     private boolean success;

@@ -1,4 +1,4 @@
-package com.mjyoo.limitedflashsale.event.entity;
+package com.mjyoo.limitedflashsale.flashsale.entity;
 
 import com.mjyoo.limitedflashsale.common.Timestamped;
 import com.mjyoo.limitedflashsale.product.entity.Product;
@@ -9,10 +9,7 @@ import java.math.BigDecimal;
 
 @Entity
 @Getter
-@Setter
-@Builder
-@AllArgsConstructor
-@NoArgsConstructor
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class FlashSaleProduct extends Timestamped {
 
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -41,4 +38,19 @@ public class FlashSaleProduct extends Timestamped {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "product_id", nullable = false)
     private Product product;
+
+    @Builder
+    public FlashSaleProduct(BigDecimal originalPrice, BigDecimal discountRate, BigDecimal discountedPrice, int initialStock, FlashSaleProductStatus status, FlashSale flashSale, Product product) {
+        this.originalPrice = originalPrice;
+        this.discountRate = discountRate;
+        this.discountedPrice = discountedPrice;
+        this.initialStock = initialStock;
+        this.status = status;
+        this.flashSale = flashSale;
+        this.product = product;
+    }
+
+    public void setStatus(FlashSaleProductStatus status) {
+        this.status = status;
+    }
 }

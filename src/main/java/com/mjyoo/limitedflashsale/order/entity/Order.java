@@ -11,10 +11,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 @Entity
-@Getter @Setter
-@Builder
-@NoArgsConstructor
-@AllArgsConstructor
+@Getter
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
 @Table(name = "orders")
 public class Order extends Timestamped {
 
@@ -36,6 +34,14 @@ public class Order extends Timestamped {
 
     @OneToMany(mappedBy = "order", cascade = {CascadeType.PERSIST, CascadeType.MERGE})
     private List<OrderProduct> orderProductList = new ArrayList<>();
+
+    @Builder
+    public Order(OrderStatus status, User user, Payment payment, List<OrderProduct> orderProductList) {
+        this.status = status;
+        this.user = user;
+        this.payment = payment;
+        this.orderProductList = orderProductList;
+    }
 
     public BigDecimal getTotalAmount() {
         BigDecimal totalAmount = BigDecimal.ZERO;

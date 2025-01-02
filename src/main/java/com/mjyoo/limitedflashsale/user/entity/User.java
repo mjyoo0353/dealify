@@ -9,10 +9,9 @@ import lombok.*;
 import java.util.List;
 
 @Entity
-@NoArgsConstructor
-@AllArgsConstructor
-@Builder
-@Getter @Setter
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
+@Getter
+@Table(name = "users")
 public class User extends Timestamped {
 
     @Id
@@ -45,4 +44,18 @@ public class User extends Timestamped {
     @OneToMany(mappedBy = "user")
     private List<Order> orderList;
 
+    @Builder
+    public User(String email, String username, String password, String phoneNumber, String address, boolean isEmailVerified, UserRoleEnum role) {
+        this.email = email;
+        this.username = username;
+        this.password = password;
+        this.phoneNumber = phoneNumber;
+        this.address = address;
+        this.isEmailVerified = isEmailVerified;
+        this.role = role;
+    }
+
+    public void setEmailVerified(boolean trueOrFalse) {
+        this.isEmailVerified = trueOrFalse;
+    }
 }

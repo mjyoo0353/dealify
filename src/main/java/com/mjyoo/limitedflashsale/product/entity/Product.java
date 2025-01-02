@@ -1,13 +1,12 @@
 package com.mjyoo.limitedflashsale.product.entity;
 
 import com.mjyoo.limitedflashsale.cart.entity.CartProduct;
-import com.mjyoo.limitedflashsale.event.entity.FlashSaleProduct;
+import com.mjyoo.limitedflashsale.flashsale.entity.FlashSaleProduct;
 import com.mjyoo.limitedflashsale.product.dto.ProductRequestDto;
 import com.mjyoo.limitedflashsale.common.Timestamped;
 import com.mjyoo.limitedflashsale.order.entity.OrderProduct;
 import jakarta.persistence.*;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
+import lombok.*;
 import org.hibernate.annotations.SQLDelete;
 
 import java.math.BigDecimal;
@@ -16,7 +15,7 @@ import java.util.List;
 
 @Entity
 @Getter
-@NoArgsConstructor
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
 @SQLDelete(sql = "UPDATE product SET is_deleted = true WHERE id = ?") // 삭제 시 is_deleted를 true로 변경
 public class Product extends Timestamped {
 
@@ -32,7 +31,7 @@ public class Product extends Timestamped {
     @Column(nullable = false)
     private boolean isDeleted = false;
 
-    @OneToOne(fetch = FetchType.LAZY, cascade = {CascadeType.PERSIST, CascadeType.MERGE})
+    @OneToOne(fetch = FetchType.EAGER, cascade = {CascadeType.PERSIST, CascadeType.MERGE})
     @JoinColumn(name = "inventory_id")
     private Inventory inventory;
 

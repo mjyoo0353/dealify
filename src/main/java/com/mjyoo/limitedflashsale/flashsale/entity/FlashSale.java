@@ -1,6 +1,7 @@
-package com.mjyoo.limitedflashsale.event.entity;
+package com.mjyoo.limitedflashsale.flashsale.entity;
 
 import com.mjyoo.limitedflashsale.common.Timestamped;
+import com.mjyoo.limitedflashsale.flashsale.dto.FlashSaleRequestDto;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -10,9 +11,7 @@ import java.util.List;
 
 @Entity
 @Getter
-@Builder
-@AllArgsConstructor
-@NoArgsConstructor
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class FlashSale extends Timestamped {
 
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -35,4 +34,18 @@ public class FlashSale extends Timestamped {
     @OneToMany(mappedBy = "flashSale")
     private List<FlashSaleProduct> flashSaleProductList = new ArrayList<>();
 
+    @Builder
+    public FlashSale(String name, LocalDateTime startTime, LocalDateTime endTime, FlashSaleStatus status, List<FlashSaleProduct> flashSaleProductList) {
+        this.name = name;
+        this.startTime = startTime;
+        this.endTime = endTime;
+        this.status = status;
+        this.flashSaleProductList = flashSaleProductList;
+    }
+
+    public void update(FlashSaleRequestDto requestDto) {
+        this.name = requestDto.getName();
+        this.startTime = requestDto.getStartTime();
+        this.endTime = requestDto.getEndTime();
+    }
 }

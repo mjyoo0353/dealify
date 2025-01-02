@@ -16,7 +16,6 @@ import org.springframework.web.bind.annotation.*;
 public class AuthController {
 
     private final AuthService authService;
-
     private final EmailVerificationService emailVerificationService;
 
     //인증코드 이메일 전송
