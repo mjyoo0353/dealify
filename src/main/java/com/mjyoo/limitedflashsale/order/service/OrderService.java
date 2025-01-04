@@ -6,6 +6,11 @@ import com.mjyoo.limitedflashsale.cart.entity.CartProduct;
 import com.mjyoo.limitedflashsale.cart.repository.CartRepository;
 import com.mjyoo.limitedflashsale.common.exception.CustomException;
 import com.mjyoo.limitedflashsale.common.exception.ErrorCode;
+import com.mjyoo.limitedflashsale.flashsale.entity.FlashSale;
+import com.mjyoo.limitedflashsale.flashsale.entity.FlashSaleProduct;
+import com.mjyoo.limitedflashsale.flashsale.entity.FlashSaleProductStatus;
+import com.mjyoo.limitedflashsale.flashsale.entity.FlashSaleStatus;
+import com.mjyoo.limitedflashsale.flashsale.repository.FlashSaleProductRepository;
 import com.mjyoo.limitedflashsale.order.dto.OrderRequestDto;
 import com.mjyoo.limitedflashsale.order.dto.OrderListResponseDto;
 import com.mjyoo.limitedflashsale.order.dto.OrderResponseDto;
@@ -18,10 +23,13 @@ import com.mjyoo.limitedflashsale.order.repository.OrderRepository;
 import com.mjyoo.limitedflashsale.product.repository.ProductRepository;
 import com.mjyoo.limitedflashsale.user.entity.User;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Slice;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -34,6 +42,7 @@ public class OrderService {
     private final ProductRepository productRepository;
     private final OrderProductRepository orderProductRepository;
     private final CartRepository cartRepository;
+    private final FlashSaleProductRepository flashSaleProductRepository;
 
     //주문 내역 상세 조회
     public OrderResponseDto getOrder(Long orderId, User user) {
@@ -43,9 +52,9 @@ public class OrderService {
     }
 
     //주문 리스트 조회
-    public OrderListResponseDto getOrderList(User user) {
-        //사용자별 주문 조회
-        List<Order> orderList = orderRepository.findByUserId(user.getId());
+    public OrderListResponseDto getOrderList(User user, Long cursor, int size) {
+        PageRequest pageRequest = PageRequest.of(0, size);
+        Slice<Order> orderList = getOrdersByCursor(user, cursor, pageRequest);
 
         //사용자가 주문한 상품 정보를 담을 리스트 생성
         List<OrderResponseDto> orderInfoList = new ArrayList<>();
@@ -55,24 +64,75 @@ public class OrderService {
             OrderResponseDto orderResponseDto = new OrderResponseDto(order);
             orderInfoList.add(orderResponseDto);
         }
-
         /*List<OrderResponseDto> orderInfoList = orderList.stream()
                 .map(OrderResponseDto::new)
                 .collect(Collectors.toList());*/
 
-        long totalOrderCount = (long) orderList.size();
+        long totalOrderCount = orderRepository.countAllByUserId(user.getId());
 
-        return new OrderListResponseDto(orderInfoList, totalOrderCount);
+        Long nextCursor = orderList.hasNext() ? orderInfoList.get(orderInfoList.size() - 1).getId() : null;
+        return new OrderListResponseDto(orderInfoList, totalOrderCount, nextCursor);
+    }
+
+    private Slice<Order> getOrdersByCursor(User user, Long cursor, PageRequest pageRequest) {
+        Slice<Order> orderList;
+        if (cursor == null || cursor == 0) {
+            orderList = orderRepository.findByUserId(user.getId(), pageRequest);
+        } else {
+            orderList = orderRepository.findByUserIdAndIdLessThan(user.getId(), cursor, pageRequest);
+        }
+        return orderList;
     }
 
     //주문 생성 (단일 상품)
     @Transactional
     public Long createOrder(OrderRequestDto requestDto, User user) {
+
         //상품 조회 및 재고 확인
         int quantity = requestDto.getQuantity();
         Product product = getValidProduct(requestDto.getProductId(), quantity);
+
         //재고 업데이트 (감소)
         product.getInventory().decreaseStock(quantity);
+
+        //해당 상품이 행사 상품인지 확인
+        FlashSaleProduct flashSaleProduct = flashSaleProductRepository.findByProductId(product.getId())
+                .orElse(null);
+
+        //행사상품이면 할인된 가격 적용
+        BigDecimal priceToApply, totalPriceToApply;
+        boolean isEventProduct = false;
+
+        //행사 상품인 경우
+        if (flashSaleProduct != null) {
+
+            // 행사 조회
+            FlashSale flashSale = flashSaleProduct.getFlashSale();
+
+            // 행사 시작 시간이 현재 시간보다 미래인지 확인하고 미래라면 예외 발생
+            if(LocalDateTime.now().isBefore(flashSale.getStartTime())) {
+                throw new CustomException(ErrorCode.FLASH_SALE_NOT_STARTED);
+            }
+
+            // 행사 상품이 ACTIVE 상태인지 확인
+            if(!FlashSaleStatus.ACTIVE.equals(flashSale.getStatus())) {
+                throw new CustomException(ErrorCode.FLASH_SALE_NOT_ACTIVE);
+            }
+
+            priceToApply = flashSaleProduct.getDiscountedPrice();
+            totalPriceToApply = priceToApply.multiply(BigDecimal.valueOf(quantity));
+            isEventProduct = true;
+
+            if (product.getInventory().getStock() == 0) {
+                flashSaleProduct.setStatus(FlashSaleProductStatus.OUT_OF_STOCK);
+                flashSaleProduct.getFlashSale().setStatus(FlashSaleStatus.ENDED);
+            }
+            flashSaleProductRepository.save(flashSaleProduct);
+
+        } else {
+            priceToApply = product.getPrice();
+            totalPriceToApply = priceToApply.multiply(BigDecimal.valueOf(quantity));
+        }
 
         //주문 생성
         Order order = Order.builder()
@@ -86,9 +146,10 @@ public class OrderService {
                 .order(order)
                 .product(product)
                 .name(product.getName())
-                .price(product.getPrice())
+                .price(priceToApply)
                 .quantity(quantity)
-                .totalAmount(product.getPrice().multiply(BigDecimal.valueOf(quantity)))
+                .totalAmount(totalPriceToApply)
+                .isEventProduct(isEventProduct)
                 .build();
         orderProductRepository.save(orderProduct);
 
@@ -110,8 +171,6 @@ public class OrderService {
                 .build();
         orderRepository.save(order);
 
-        //TODO : 장바구니에 담긴 상품 수량이 2이고 주문은 1개만 한다고 하는경우?
-
         // 주문 상품 리스트 생성
         List<OrderProduct> orderProductList = new ArrayList<>();
 
@@ -127,7 +186,7 @@ public class OrderService {
                     .orElseThrow(() -> new CustomException(ErrorCode.CART_PRODUCT_NOT_FOUND));
 
             //장바구니 수량과 요청 수량이 일치하는지 검증
-            if(cartProduct.getQuantity() < quantity) {
+            if (cartProduct.getQuantity() < quantity) {
                 throw new CustomException(ErrorCode.INVALID_QUANTITY);
             }
 

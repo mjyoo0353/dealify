@@ -34,9 +34,11 @@ public class OrderController {
 
     //주문 리스트 조회
     @GetMapping("/list")
-    public ResponseEntity<ApiResponse<?>> getOrderList(@AuthenticationPrincipal UserDetailsImpl userDetails) {
+    public ResponseEntity<ApiResponse<?>> getOrderList(@AuthenticationPrincipal UserDetailsImpl userDetails,
+                                                       @RequestParam(value = "cursor", required = false, defaultValue = "0") Long cursor,
+                                                       @RequestParam(value = "size", defaultValue = "10") int size) {
         User user = userDetails.getUser();
-        OrderListResponseDto orderList = orderService.getOrderList(user);
+        OrderListResponseDto orderList = orderService.getOrderList(user, cursor, size);
         return ResponseEntity.ok(ApiResponse.success(orderList));
     }
 

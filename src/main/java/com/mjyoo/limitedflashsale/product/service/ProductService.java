@@ -10,6 +10,8 @@ import com.mjyoo.limitedflashsale.product.repository.ProductRepository;
 import com.mjyoo.limitedflashsale.user.entity.User;
 import com.mjyoo.limitedflashsale.user.entity.UserRoleEnum;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Slice;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -31,36 +33,49 @@ public class ProductService {
     }
 
     // 상품 목록 조회 (Active 상품만 조회)
-    public ProductListResponseDto getActiveProductList() {
-        List<Product> productList = productRepository.findAllActive();
+    public ProductListResponseDto getActiveProductList(Long cursor, int size) {
+
+        PageRequest pageRequest = PageRequest.of(0, size);
+        Slice<Product> productList = getProductsByCursor(cursor, pageRequest);
+
+        // 전체 상품 수 조회
         Long totalProducts = productRepository.countActiveProducts();
-        List<ProductResponseDto> ProductInfoList = new ArrayList<>();
+
+        List<ProductResponseDto> productInfoList = new ArrayList<>();
         for (Product product : productList) {
-            ProductInfoList.add(new ProductResponseDto(product));
+            productInfoList.add(new ProductResponseDto(product));
         }
-        return new ProductListResponseDto(ProductInfoList, totalProducts);
+        // 마지막 상품의 id를 cursor로 사용
+        Long nextCursor = productList.hasNext() ? productInfoList.get(productInfoList.size() - 1).getId() : null;
+
+        return new ProductListResponseDto(productInfoList, totalProducts, nextCursor);
     }
 
     // 상품 목록 조회 - 관리자용 (deleted 여부에 따라 필터링)
-    public ProductListResponseDto getAllProductList(boolean deleted, User user) {
+    public ProductListResponseDto getAllProductList(boolean deleted, User user, Long cursor, int size) {
         //관리자 권한 확인
         checkAdminRole(user);
 
-        List<Product> productList;
+        PageRequest pageRequest = PageRequest.of(0, size);
+        Slice<Product> productList;
         Long totalProducts;
 
         if(deleted) {
-            productList = productRepository.findDeletedProducts();
+            productList = productRepository.findDeletedProducts(cursor, pageRequest);
             totalProducts = productRepository.countDeletedProducts();
         } else {
-            productList = productRepository.findAllActive();
+            productList = getProductsByCursor(cursor, pageRequest);
             totalProducts = productRepository.countActiveProducts();
         }
         List<ProductResponseDto> ProductInfoList = new ArrayList<>();
         for (Product product : productList) {
             ProductInfoList.add(new ProductResponseDto(product));
         }
-        return new ProductListResponseDto(ProductInfoList, totalProducts);
+
+        // 마지막 상품의 id를 cursor로 사용
+        Long nextCursor = productList.hasNext() ? ProductInfoList.get(ProductInfoList.size() - 1).getId() : null;
+
+        return new ProductListResponseDto(ProductInfoList, totalProducts, nextCursor);
     }
 
     // 상품 생성
@@ -96,6 +111,16 @@ public class ProductService {
 
         Product product = getProductById(productId);
         productRepository.delete(product); // @SQLDelete가 실행됨
+    }
+
+    private Slice<Product> getProductsByCursor(Long cursor, PageRequest pageRequest) {
+        Slice<Product> productList;
+        if (cursor == null || cursor == 0) { // cursor가 없을 경우, 최신 상품 조회
+            productList = productRepository.findAllActiveProducts(pageRequest);
+        } else { // cursor가 있을 경우, cursor 기준으로 이전 상품 조회
+            productList = productRepository.findAllActiveProductsAndIdLessThan(cursor, pageRequest);
+        }
+        return productList;
     }
 
     private Product getProductById(Long productId) {

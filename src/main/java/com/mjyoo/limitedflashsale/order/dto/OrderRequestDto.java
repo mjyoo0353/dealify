@@ -2,9 +2,11 @@ package com.mjyoo.limitedflashsale.order.dto;
 
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotNull;
+import lombok.Builder;
 import lombok.Getter;
 
 @Getter
+@Builder
 public class OrderRequestDto {
     @NotNull(message = "Product ID is required.")
     private Long productId;

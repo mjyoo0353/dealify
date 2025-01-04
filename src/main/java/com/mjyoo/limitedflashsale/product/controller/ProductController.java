@@ -34,8 +34,9 @@ public class ProductController {
 
     //상품 목록 조회 (Active 상품만 조회)
     @GetMapping("/list")
-    public ResponseEntity<ApiResponse<ProductListResponseDto>> getActiveProductList() {
-        ProductListResponseDto productList = productService.getActiveProductList();
+    public ResponseEntity<ApiResponse<ProductListResponseDto>> getActiveProductList(@RequestParam(value = "cursor", required = false, defaultValue = "0") Long cursor,
+                                                                                    @RequestParam(value = "size", defaultValue = "10") int size) {
+        ProductListResponseDto productList = productService.getActiveProductList(cursor, size);
         return ResponseEntity.ok(ApiResponse.success(productList));
     }
 
@@ -48,9 +49,11 @@ public class ProductController {
     @PreAuthorize("hasRole('ROLE_ADMIN')")
     @Secured(UserRoleEnum.Authority.ADMIN)
     public ResponseEntity<ApiResponse<?>> getAllProductList(@RequestParam(value = "deleted", required = false, defaultValue = "false") boolean deleted,
-                                                                                    @AuthenticationPrincipal UserDetailsImpl userDetails) {
+                                                                                    @AuthenticationPrincipal UserDetailsImpl userDetails,
+                                                                                    @RequestParam(value = "cursor", required = false, defaultValue = "0") Long cursor,
+                                                                                    @RequestParam(value = "size", defaultValue = "10") int size) {
         User user = userDetails.getUser();
-        ProductListResponseDto productList = productService.getAllProductList(deleted, user);
+        ProductListResponseDto productList = productService.getAllProductList(deleted, user, cursor, size);
         return ResponseEntity.ok(ApiResponse.success(productList));
     }
 

@@ -29,6 +29,9 @@ public class Product extends Timestamped {
     private BigDecimal price; //상품 가격
 
     @Column(nullable = false)
+    private boolean isFlashSale = false;
+
+    @Column(nullable = false)
     private boolean isDeleted = false;
 
     @OneToOne(fetch = FetchType.EAGER, cascade = {CascadeType.PERSIST, CascadeType.MERGE})
@@ -44,6 +47,7 @@ public class Product extends Timestamped {
     @OneToMany(mappedBy = "product")
     private List<CartProduct> cartProductList = new ArrayList<>();
 
+    @Builder
     public Product(ProductRequestDto requestDto, int stock) {
         this.name = requestDto.getName();
         this.price = requestDto.getPrice();

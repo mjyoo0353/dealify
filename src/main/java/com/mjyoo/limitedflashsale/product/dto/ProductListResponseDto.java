@@ -8,9 +8,11 @@ import java.util.List;
 public class ProductListResponseDto {
     private List<ProductResponseDto> productInfoList;
     private Long totalProductCount;
+    private Long lastCursor; // 위치
 
-    public ProductListResponseDto(List<ProductResponseDto> productInfoList, Long totalProductCount) {
+    public ProductListResponseDto(List<ProductResponseDto> productInfoList, Long totalProductCount, Long cursor) {
         this.productInfoList = productInfoList;
         this.totalProductCount = totalProductCount;
+        this.lastCursor = cursor;
     }
 }
