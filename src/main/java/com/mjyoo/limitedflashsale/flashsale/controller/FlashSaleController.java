@@ -2,8 +2,11 @@ package com.mjyoo.limitedflashsale.flashsale.controller;
 
 import com.mjyoo.limitedflashsale.auth.security.UserDetailsImpl;
 import com.mjyoo.limitedflashsale.common.dto.ApiResponse;
+import com.mjyoo.limitedflashsale.flashsale.dto.FlashSaleListResponseDto;
 import com.mjyoo.limitedflashsale.flashsale.dto.FlashSaleRequestDto;
 import com.mjyoo.limitedflashsale.flashsale.dto.FlashSaleResponseDto;
+import com.mjyoo.limitedflashsale.flashsale.dto.FlashSaleUpdateRequestDto;
+import com.mjyoo.limitedflashsale.flashsale.entity.FlashSale;
 import com.mjyoo.limitedflashsale.flashsale.service.FlashSaleService;
 import com.mjyoo.limitedflashsale.user.entity.User;
 import jakarta.validation.Valid;
@@ -11,6 +14,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 @RestController
 @RequiredArgsConstructor
@@ -21,14 +26,16 @@ public class FlashSaleController {
 
     // 행사 조회
     @GetMapping("/{eventId}")
-    public ResponseEntity<ApiResponse<?>> getFlashSale(@PathVariable Long eventId) {
-        return ResponseEntity.ok(ApiResponse.success("행사 조회 성공"));
+    public ResponseEntity<ApiResponse<?>> getFlashSaleDetail(@PathVariable Long eventId) {
+        FlashSaleResponseDto flashSaleDetail = flashSaleService.getFlashSaleDetail(eventId);
+        return ResponseEntity.ok(ApiResponse.success(flashSaleDetail));
     }
 
     // 행사 목록 조회
     @GetMapping("/list")
     public ResponseEntity<ApiResponse<?>> getFlashSaleList() {
-        return ResponseEntity.ok(ApiResponse.success("행사 목록 조회 성공"));
+        FlashSaleListResponseDto flashSaleList = flashSaleService.getFlashSaleList();
+        return ResponseEntity.ok(ApiResponse.success(flashSaleList));
     }
 
     // 행사 생성
@@ -43,7 +50,7 @@ public class FlashSaleController {
     // 행사 수정
     @PutMapping("/admin/update/{eventId}")
     public ResponseEntity<ApiResponse<?>> updateFlashSale(@PathVariable Long eventId,
-                                                      @Valid @RequestBody FlashSaleRequestDto requestDto,
+                                                      @Valid @RequestBody FlashSaleUpdateRequestDto requestDto,
                                                       @AuthenticationPrincipal UserDetailsImpl userDetails) {
         User user = userDetails.getUser();
         FlashSaleResponseDto flashSaleResponseDto = flashSaleService.updateFlashSale(eventId, requestDto, user);

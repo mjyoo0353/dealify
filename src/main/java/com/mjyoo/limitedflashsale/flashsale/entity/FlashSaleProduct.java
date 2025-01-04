@@ -50,6 +50,12 @@ public class FlashSaleProduct extends Timestamped {
         this.product = product;
     }
 
+    public void updateDiscountRate(BigDecimal discountRate) {
+        this.discountRate = discountRate;
+        this.discountedPrice = this.originalPrice.subtract(this.originalPrice.multiply(discountRate));
+    }
+
+
     public void setStatus(FlashSaleProductStatus status) {
         this.status = status;
     }

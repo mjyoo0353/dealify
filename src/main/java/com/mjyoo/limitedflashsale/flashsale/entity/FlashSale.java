@@ -1,7 +1,7 @@
 package com.mjyoo.limitedflashsale.flashsale.entity;
 
 import com.mjyoo.limitedflashsale.common.Timestamped;
-import com.mjyoo.limitedflashsale.flashsale.dto.FlashSaleRequestDto;
+import com.mjyoo.limitedflashsale.flashsale.dto.FlashSaleUpdateRequestDto;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -43,7 +43,7 @@ public class FlashSale extends Timestamped {
         this.flashSaleProductList = flashSaleProductList;
     }
 
-    public void update(FlashSaleRequestDto requestDto) {
+    public void update(FlashSaleUpdateRequestDto requestDto) {
         this.name = requestDto.getName();
         this.startTime = requestDto.getStartTime();
         this.endTime = requestDto.getEndTime();

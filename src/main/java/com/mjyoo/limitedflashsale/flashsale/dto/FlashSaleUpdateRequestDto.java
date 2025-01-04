@@ -7,10 +7,7 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 @Getter
-public class FlashSaleRequestDto {
-    @NotNull(message = "상품 ID를 입력해주세요.")
-    private Long productId;
-
+public class FlashSaleUpdateRequestDto {
     @NotNull(message = "행사 이름을 입력해주세요.")
     private String name;
 
@@ -22,5 +19,4 @@ public class FlashSaleRequestDto {
 
     @NotNull(message = "할인율을 입력해주세요.")
     private BigDecimal discountRate; //20%는 0.20으로 입력
-
 }
