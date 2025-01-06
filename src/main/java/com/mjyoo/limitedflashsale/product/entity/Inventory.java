@@ -2,13 +2,13 @@ package com.mjyoo.limitedflashsale.product.entity;
 
 import com.mjyoo.limitedflashsale.common.Timestamped;
 import jakarta.persistence.*;
+import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-import lombok.Setter;
 
-@Getter @Setter
+@Getter
 @Entity
-@NoArgsConstructor
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class Inventory extends Timestamped {
 
     @Id
@@ -34,10 +34,14 @@ public class Inventory extends Timestamped {
         this.product = product;
     }
 
-    public void decreaseStock(Integer quantity) {
+    public void decreaseStock(int quantity) {
         if (quantity > this.stock) {
             throw new IllegalArgumentException("재고가 부족합니다.");
         }
         this.stock -= quantity;
+    }
+
+    public void restoreStock(int quantity) {
+        this.stock += quantity;
     }
 }
