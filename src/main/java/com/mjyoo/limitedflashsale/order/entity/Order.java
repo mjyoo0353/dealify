@@ -1,6 +1,6 @@
 package com.mjyoo.limitedflashsale.order.entity;
 
-import com.mjyoo.limitedflashsale.payment.Payment;
+import com.mjyoo.limitedflashsale.payment.entity.Payment;
 import com.mjyoo.limitedflashsale.common.Timestamped;
 import com.mjyoo.limitedflashsale.user.entity.User;
 import jakarta.persistence.*;
@@ -29,7 +29,7 @@ public class Order extends Timestamped {
     private User user;
 
     @OneToOne
-    @JoinColumn(name = "payment_id", nullable = true)
+    @JoinColumn(name = "payment_id", nullable = false)
     private Payment payment;
 
     @OneToMany(mappedBy = "order", cascade = {CascadeType.PERSIST, CascadeType.MERGE})
@@ -51,4 +51,11 @@ public class Order extends Timestamped {
         return totalAmount;
     }
 
+    public void setPayment(Payment payment) {
+        this.payment = payment;
+    }
+
+    public void updateStatus(OrderStatus orderStatus) {
+        this.status = orderStatus;
+    }
 }

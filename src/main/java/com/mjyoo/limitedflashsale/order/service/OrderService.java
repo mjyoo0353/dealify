@@ -4,6 +4,7 @@ import com.mjyoo.limitedflashsale.cart.dto.CartRequestDto;
 import com.mjyoo.limitedflashsale.cart.entity.Cart;
 import com.mjyoo.limitedflashsale.cart.entity.CartProduct;
 import com.mjyoo.limitedflashsale.cart.repository.CartRepository;
+import com.mjyoo.limitedflashsale.common.dto.ApiResponse;
 import com.mjyoo.limitedflashsale.common.exception.CustomException;
 import com.mjyoo.limitedflashsale.common.exception.ErrorCode;
 import com.mjyoo.limitedflashsale.flashsale.entity.FlashSale;
@@ -11,18 +12,23 @@ import com.mjyoo.limitedflashsale.flashsale.entity.FlashSaleProduct;
 import com.mjyoo.limitedflashsale.flashsale.entity.FlashSaleProductStatus;
 import com.mjyoo.limitedflashsale.flashsale.entity.FlashSaleStatus;
 import com.mjyoo.limitedflashsale.flashsale.repository.FlashSaleProductRepository;
+import com.mjyoo.limitedflashsale.flashsale.repository.FlashSaleRepository;
 import com.mjyoo.limitedflashsale.order.dto.OrderRequestDto;
 import com.mjyoo.limitedflashsale.order.dto.OrderListResponseDto;
 import com.mjyoo.limitedflashsale.order.dto.OrderResponseDto;
 import com.mjyoo.limitedflashsale.order.entity.Order;
 import com.mjyoo.limitedflashsale.order.entity.OrderProduct;
 import com.mjyoo.limitedflashsale.order.entity.OrderStatus;
+import com.mjyoo.limitedflashsale.payment.dto.PaymentRequestDto;
+import com.mjyoo.limitedflashsale.payment.service.PaymentService;
 import com.mjyoo.limitedflashsale.product.entity.Product;
 import com.mjyoo.limitedflashsale.order.repository.OrderProductRepository;
 import com.mjyoo.limitedflashsale.order.repository.OrderRepository;
 import com.mjyoo.limitedflashsale.product.repository.ProductRepository;
 import com.mjyoo.limitedflashsale.user.entity.User;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.jetbrains.annotations.NotNull;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Slice;
 import org.springframework.stereotype.Service;
@@ -34,6 +40,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class OrderService {
@@ -43,6 +50,8 @@ public class OrderService {
     private final OrderProductRepository orderProductRepository;
     private final CartRepository cartRepository;
     private final FlashSaleProductRepository flashSaleProductRepository;
+    private final FlashSaleRepository flashSaleRepository;
+    private final PaymentService paymentService;
 
     //주문 내역 상세 조회
     public OrderResponseDto getOrder(Long orderId, User user) {
@@ -99,7 +108,6 @@ public class OrderService {
         FlashSaleProduct flashSaleProduct = flashSaleProductRepository.findByProductId(product.getId())
                 .orElse(null);
 
-        //행사상품이면 할인된 가격 적용
         BigDecimal priceToApply, totalPriceToApply;
         boolean isEventProduct = false;
 
@@ -119,27 +127,27 @@ public class OrderService {
                 throw new CustomException(ErrorCode.FLASH_SALE_NOT_ACTIVE);
             }
 
+            //행사상품이면 할인된 가격 적용
             priceToApply = flashSaleProduct.getDiscountedPrice();
             totalPriceToApply = priceToApply.multiply(BigDecimal.valueOf(quantity));
             isEventProduct = true;
 
+            //재고가 없으면 상태 변경
             if (product.getInventory().getStock() == 0) {
                 flashSaleProduct.setStatus(FlashSaleProductStatus.OUT_OF_STOCK);
-                flashSaleProduct.getFlashSale().setStatus(FlashSaleStatus.ENDED);
+                flashSaleProductRepository.save(flashSaleProduct);
+                flashSale.setStatus(FlashSaleStatus.ENDED);
+                flashSaleRepository.save(flashSale);
             }
-            flashSaleProductRepository.save(flashSaleProduct);
 
         } else {
+            // 행사 상품이 아닌 경우 일반 가격 적용
             priceToApply = product.getPrice();
             totalPriceToApply = priceToApply.multiply(BigDecimal.valueOf(quantity));
         }
 
         //주문 생성
-        Order order = Order.builder()
-                .user(user)
-                .status(OrderStatus.ORDERED)
-                .build();
-        orderRepository.save(order);
+        Order order = createOrder(user);
 
         //주문 상품 생성
         OrderProduct orderProduct = OrderProduct.builder()
@@ -151,7 +159,13 @@ public class OrderService {
                 .totalAmount(totalPriceToApply)
                 .isEventProduct(isEventProduct)
                 .build();
+
+        // 주문 상품 리스트에 단일 상품 추가
+        order.getOrderProductList().add(orderProduct);
         orderProductRepository.save(orderProduct);
+
+        //결제 처리
+        processPayment(user, order, totalPriceToApply);
 
         return order.getId();
     }
@@ -159,17 +173,13 @@ public class OrderService {
     //주문 생성 (장바구니 상품)
     @Transactional
     public Long createOrderFromCart(List<CartRequestDto> cartRequestDtos, User user) {
+
         // 유저 장바구니 조회
         Cart cart = cartRepository.findByUserId(user.getId())
                 .orElseThrow(() -> new CustomException(ErrorCode.CART_NOT_FOUND));
 
         //주문 생성
-        Order order = Order.builder()
-                .user(user)
-                .status(OrderStatus.ORDERED)
-                .orderProductList(new ArrayList<>())
-                .build();
-        orderRepository.save(order);
+        Order order = createOrder(user);
 
         // 주문 상품 리스트 생성
         List<OrderProduct> orderProductList = new ArrayList<>();
@@ -190,15 +200,8 @@ public class OrderService {
                 throw new CustomException(ErrorCode.INVALID_QUANTITY);
             }
 
-            //상품 조회
-            Product product = productRepository.findById(productId)
-                    .filter(prod -> !prod.isDeleted())
-                    .orElseThrow(() -> new CustomException(ErrorCode.PRODUCT_NOT_FOUND));
-
-            //재고 확인
-            if (product.getInventory().getStock() < quantity) {
-                throw new CustomException(ErrorCode.OUT_OF_STOCK);
-            }
+            //상품 조회 및 재고 확인
+            Product product = getValidProduct(productId, quantity);
 
             //재고 업데이트 (감소)
             product.getInventory().decreaseStock(quantity);
@@ -222,9 +225,10 @@ public class OrderService {
         //주문 상품 리스트에 주문 상품 추가
         order.getOrderProductList().addAll(orderProductList);
         orderProductRepository.saveAll(orderProductList);
-
-        //변경된 장바구니 저장
         cartRepository.save(cart);
+
+        //결제 처리
+        processPayment(user, order, order.getTotalAmount());
 
         return order.getId();
     }
@@ -246,15 +250,36 @@ public class OrderService {
         for (OrderProduct orderProduct : order.getOrderProductList()) {
             Product product = orderProduct.getProduct();
             //취소된 상품 수량 재고에 추가
-            product.getInventory().setStock(product.getInventory().getStock() + orderProduct.getQuantity());
+            product.getInventory().restoreStock(orderProduct.getQuantity());
         }
         orderRepository.save(order);
     }
 
+    @NotNull
+    private Order createOrder(User user) {
+        Order order = Order.builder()
+                .user(user)
+                .status(OrderStatus.ORDER_PROCESSING)
+                .payment(null)
+                .orderProductList(new ArrayList<>())
+                .build();
+        orderRepository.save(order);
+        return order;
+    }
+
+    private void processPayment(User user, Order order, BigDecimal totalPriceToApply) {
+        PaymentRequestDto paymentRequestDto = PaymentRequestDto.builder()
+                .orderId(order.getId())
+                .totalAmount(totalPriceToApply)
+                .build();
+        paymentService.processPayment(paymentRequestDto, user);
+    }
+
+
     private Product getValidProduct(Long productId, int quantity) {
         //삭제되지 않은 상품 조회
         Product product = productRepository.findById(productId)
-                .filter(product1 -> !product1.isDeleted())
+                .filter(prod -> !prod.isDeleted())
                 .orElseThrow(() -> new CustomException(ErrorCode.PRODUCT_NOT_FOUND));
 
         //재고 확인

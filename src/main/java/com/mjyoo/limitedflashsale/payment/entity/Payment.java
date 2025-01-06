@@ -1,8 +1,9 @@
-package com.mjyoo.limitedflashsale.payment;
+package com.mjyoo.limitedflashsale.payment.entity;
 
 import com.mjyoo.limitedflashsale.common.Timestamped;
 import com.mjyoo.limitedflashsale.order.entity.Order;
 import jakarta.persistence.*;
+import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
@@ -18,14 +19,21 @@ public class Payment extends Timestamped {
     private Long id;
 
     @Column(nullable = false, precision = 10, scale = 2)
-    private BigDecimal amount;
+    private BigDecimal totalAmount;
 
+    @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-    private String status;
+    private PaymentStatus status;
 
     @OneToOne(mappedBy = "payment")
     private Order order;
 
+    @Builder
+    public Payment(BigDecimal totalAmount, PaymentStatus status, Order order) {
+        this.totalAmount = totalAmount;
+        this.status = status;
+        this.order = order;
+    }
 
 }
 
