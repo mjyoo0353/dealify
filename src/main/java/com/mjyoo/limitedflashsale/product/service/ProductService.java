@@ -61,7 +61,7 @@ public class ProductService {
         Long totalProducts;
 
         if(deleted) {
-            productList = productRepository.findDeletedProducts(cursor, pageRequest);
+            productList = getDeletedProductsByCursor(cursor, pageRequest);
             totalProducts = productRepository.countDeletedProducts();
         } else {
             productList = getProductsByCursor(cursor, pageRequest);
@@ -110,15 +110,26 @@ public class ProductService {
         checkAdminRole(user);
 
         Product product = getProductById(productId);
-        productRepository.delete(product); // @SQLDelete가 실행됨
+        product.updateToDelete(true); // soft delete 상태로 변경
+        productRepository.save(product);
     }
 
     private Slice<Product> getProductsByCursor(Long cursor, PageRequest pageRequest) {
         Slice<Product> productList;
         if (cursor == null || cursor == 0) { // cursor가 없을 경우, 최신 상품 조회
-            productList = productRepository.findAllActiveProducts(pageRequest);
+            productList = productRepository.findActiveProducts(pageRequest);
         } else { // cursor가 있을 경우, cursor 기준으로 이전 상품 조회
-            productList = productRepository.findAllActiveProductsAndIdLessThan(cursor, pageRequest);
+            productList = productRepository.findActiveProductsAndIdLessThan(cursor, pageRequest);
+        }
+        return productList;
+    }
+
+    private Slice<Product> getDeletedProductsByCursor(Long cursor, PageRequest pageRequest) {
+        Slice<Product> productList;
+        if (cursor == null || cursor == 0) { // cursor가 없을 경우, 최신 상품 조회
+            productList = productRepository.findDeletedProducts(pageRequest);
+        } else { // cursor가 있을 경우, cursor 기준으로 이전 상품 조회
+            productList = productRepository.findDeletedProductsAndIdLessThan(cursor, pageRequest);
         }
         return productList;
     }

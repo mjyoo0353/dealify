@@ -16,7 +16,6 @@ import java.util.List;
 @Entity
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-@SQLDelete(sql = "UPDATE product SET is_deleted = true WHERE id = ?") // 삭제 시 is_deleted를 true로 변경
 public class Product extends Timestamped {
 
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -57,6 +56,10 @@ public class Product extends Timestamped {
     public void update(ProductRequestDto requestDto) {
         this.name = requestDto.getName();
         this.price = requestDto.getPrice();
+    }
+
+    public void updateToDelete(boolean isDeleted) {
+        this.isDeleted = isDeleted;
     }
 
 }
