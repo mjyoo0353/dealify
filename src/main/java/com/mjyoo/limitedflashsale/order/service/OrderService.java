@@ -20,6 +20,8 @@ import com.mjyoo.limitedflashsale.order.entity.Order;
 import com.mjyoo.limitedflashsale.order.entity.OrderProduct;
 import com.mjyoo.limitedflashsale.order.entity.OrderStatus;
 import com.mjyoo.limitedflashsale.payment.dto.PaymentRequestDto;
+import com.mjyoo.limitedflashsale.payment.entity.Payment;
+import com.mjyoo.limitedflashsale.payment.entity.PaymentStatus;
 import com.mjyoo.limitedflashsale.payment.service.PaymentService;
 import com.mjyoo.limitedflashsale.product.entity.Product;
 import com.mjyoo.limitedflashsale.order.repository.OrderProductRepository;
@@ -257,11 +259,17 @@ public class OrderService {
 
     @NotNull
     private Order createOrder(User user) {
+        // 초기 상태 설정
+        Payment payment = Payment.builder()
+                .status(PaymentStatus.PENDING)
+                .totalAmount(BigDecimal.ZERO)
+                .build();
+
         Order order = Order.builder()
                 .user(user)
                 .status(OrderStatus.ORDER_PROCESSING)
-                .payment(null)
                 .orderProductList(new ArrayList<>())
+                .payment(payment)
                 .build();
         orderRepository.save(order);
         return order;
