@@ -28,7 +28,7 @@ public class EmailVerificationService {
     private final EmailVerificationRepository emailVerificationRepository;
     private final JavaMailSender emailSender; // 이메일 발송을 위한 JavaMailSender
 
-    public String sendVerificationEmail(String email) throws MessagingException {
+    public void sendVerificationEmail(String email) throws MessagingException {
         String token = createVerificationToken(email);
         MimeMessage message = createVerificationMessage(email, token);
         try {
@@ -36,21 +36,19 @@ public class EmailVerificationService {
         } catch (MailException e) {
             throw new RuntimeException("Failed to send email to " + email, e);
         }
-        return "인증 이메일이 성공적으로 전송되었습니다.";
     }
 
     public MimeMessage createVerificationMessage(String email, String token) throws MessagingException {
         MimeMessage message = emailSender.createMimeMessage();
 
         message.addRecipients(MimeMessage.RecipientType.TO, email);
-        message.setSubject("Dealify 회원가입 인증 메일입니다.");
+        message.setSubject("Dealify - Welcome! Verify Your Email to Get Started");
 
         //이메일 본문 내용
         String content =
                 "<html><body>" +
-                "<h3>Dealify 회원가입 인증</h3>" +
-                "<p>아래의 코드를 입력하여 회원가입을 완료해주세요.</p>" +
-                "인증번호는 " + token + " 입니다." +
+                "<p>Please verify your email address for Dealify.</p>" +
+                "Your verification code is " + token +
                 "</body></html>";
 
         message.setText(content, "UTF-8", "html");

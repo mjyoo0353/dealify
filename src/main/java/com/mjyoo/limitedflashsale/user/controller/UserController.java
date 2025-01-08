@@ -20,20 +20,20 @@ import org.springframework.web.bind.annotation.*;
 @Slf4j
 @RestController
 @RequiredArgsConstructor
-@RequestMapping("/api/user")
+@RequestMapping("/api")
 public class UserController {
 
     private final UserService userService;
 
     //회원가입
-    @PostMapping("/signup")
+    @PostMapping("/user/signup")
     public ResponseEntity<?> signup(@Valid @RequestBody SignupRequestDto requestDto) throws MessagingException {
         userService.signup(requestDto);
         return ResponseEntity.ok(ApiResponse.success("회원가입에 성공했습니다."));
     }
 
     //마이페이지 조회
-    @GetMapping("/mypage")
+    @GetMapping("/user/mypage")
     public ResponseEntity<ApiResponse<?>> getMyPage(@AuthenticationPrincipal UserDetailsImpl userDetails) {
         if(userDetails == null) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
@@ -48,7 +48,7 @@ public class UserController {
      * 아래는 관리자만 접근 가능
      */
     //회원 정보 조회
-    @GetMapping("/admin/{userId}")
+    @GetMapping("/user/{userId}")
     public ResponseEntity<ApiResponse<UserResponseDto>> getUserInfo(@PathVariable Long userId,
                                                                     @AuthenticationPrincipal UserDetailsImpl userDetails) {
         User user = userDetails.getUser();
@@ -57,7 +57,7 @@ public class UserController {
     }
 
     //회원 리스트 조회
-    @GetMapping("/admin/list")
+    @GetMapping("/users")
     public ResponseEntity<ApiResponse<UserListResponseDto>> getUserList(@AuthenticationPrincipal UserDetailsImpl userDetails) {
         User user = userDetails.getUser();
         UserListResponseDto userList = userService.getUserList(user);

@@ -18,13 +18,13 @@ import java.util.List;
 
 @RestController
 @RequiredArgsConstructor
-@RequestMapping("/api/order")
+@RequestMapping("/api")
 public class OrderController {
 
     private final OrderService orderService;
 
     //주문 조회
-    @GetMapping("/{orderId}")
+    @GetMapping("/order/{orderId}")
     public ResponseEntity<ApiResponse<?>> getOrder(@PathVariable Long orderId,
                                                    @AuthenticationPrincipal UserDetailsImpl userDetails) {
         User user = userDetails.getUser();
@@ -33,7 +33,7 @@ public class OrderController {
     }
 
     //주문 리스트 조회
-    @GetMapping("/list")
+    @GetMapping("/orders")
     public ResponseEntity<ApiResponse<?>> getOrderList(@AuthenticationPrincipal UserDetailsImpl userDetails,
                                                        @RequestParam(value = "cursor", required = false, defaultValue = "0") Long cursor,
                                                        @RequestParam(value = "size", defaultValue = "10") int size) {
@@ -43,7 +43,7 @@ public class OrderController {
     }
 
     //단일 상품 주문 생성
-    @PostMapping("/create")
+    @PostMapping("/order")
     public ResponseEntity<ApiResponse<?>> createOrder(@Valid @RequestBody OrderRequestDto requestDto,
                                                       @AuthenticationPrincipal UserDetailsImpl userDetails) {
         User user = userDetails.getUser();
@@ -51,7 +51,8 @@ public class OrderController {
         return ResponseEntity.ok(ApiResponse.success("주문이 완료되었습니다.", orderId));
     }
 
-    @PostMapping("/create-from-cart")
+    //장바구니 상품 주문 생성
+    @PostMapping("/order-from-cart")
     public ResponseEntity<ApiResponse<?>> createOrderFromCart(@RequestBody List<CartRequestDto> cartRequestDtos,
                                                               @AuthenticationPrincipal UserDetailsImpl userDetails) {
         User user = userDetails.getUser();
@@ -60,11 +61,12 @@ public class OrderController {
     }
 
     //주문 취소
-    @PutMapping("/cancel/{orderId}")
-    public ResponseEntity<String> cancelOrder(@PathVariable Long orderId,
-                                              @AuthenticationPrincipal UserDetailsImpl userDetails) {
+    @PatchMapping("/order/{orderId}")
+    public ResponseEntity<ApiResponse<?>> cancelOrder(@PathVariable Long orderId,
+                                                      @AuthenticationPrincipal UserDetailsImpl userDetails) {
         User user = userDetails.getUser();
         orderService.cancelOrder(orderId, user);
-        return ResponseEntity.ok("주문이 취소되었습니다.");
+        return ResponseEntity.ok(ApiResponse.success("주문이 취소되었습니다."));
+
     }
 }

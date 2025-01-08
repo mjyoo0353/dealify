@@ -14,13 +14,13 @@ import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequiredArgsConstructor
-@RequestMapping("/api/cart")
+@RequestMapping("/api")
 public class CartController {
 
     private final CartService cartService;
 
     // 장바구니 목록 조회
-    @GetMapping("/list")
+    @GetMapping("/carts")
     public ResponseEntity<ApiResponse<?>> getCartList(@AuthenticationPrincipal UserDetailsImpl userDetails) {
         User user = userDetails.getUser();
         CartListResponseDto cartList = cartService.getCartList(user);
@@ -28,7 +28,7 @@ public class CartController {
     }
 
     // 장바구니에 상품 추가
-    @PostMapping("/add")
+    @PostMapping("/cart")
     public ResponseEntity<ApiResponse<?>> addToCart(@RequestBody CartRequestDto requestDto,
                                                             @AuthenticationPrincipal UserDetailsImpl userDetails) {
         User user = userDetails.getUser();
@@ -37,7 +37,7 @@ public class CartController {
     }
 
     // 장바구니 상품 수량 변경
-    @PutMapping("/update/{productId}")
+    @PutMapping("/cart/{productId}")
     public ResponseEntity<ApiResponse<?>> updateCart(@RequestBody CartRequestDto requestDto,
                                         @AuthenticationPrincipal UserDetailsImpl userDetails) {
         User user = userDetails.getUser();
@@ -46,7 +46,7 @@ public class CartController {
     }
 
     // 장바구니에서 상품 삭제
-    @DeleteMapping("/delete/{productId}")
+    @DeleteMapping("/cart/{productId}")
     public ResponseEntity<ApiResponse<?>> deleteFromCart(@PathVariable Long productId,
                                             @AuthenticationPrincipal UserDetailsImpl userDetails) {
         User user = userDetails.getUser();

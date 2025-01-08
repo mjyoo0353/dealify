@@ -15,31 +15,30 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.List;
 
 @RestController
 @RequiredArgsConstructor
-@RequestMapping("/api/flash-sale")
+@RequestMapping("/api")
 public class FlashSaleController {
 
     private final FlashSaleService flashSaleService;
 
     // 행사 조회
-    @GetMapping("/{eventId}")
+    @GetMapping("/flash-sale/{eventId}")
     public ResponseEntity<ApiResponse<?>> getFlashSaleDetail(@PathVariable Long eventId) {
         FlashSaleResponseDto flashSaleDetail = flashSaleService.getFlashSaleDetail(eventId);
         return ResponseEntity.ok(ApiResponse.success(flashSaleDetail));
     }
 
     // 행사 목록 조회
-    @GetMapping("/list")
+    @GetMapping("/flash-sales")
     public ResponseEntity<ApiResponse<?>> getFlashSaleList() {
         FlashSaleListResponseDto flashSaleList = flashSaleService.getFlashSaleList();
         return ResponseEntity.ok(ApiResponse.success(flashSaleList));
     }
 
     // 행사 생성
-    @PostMapping("/admin/create")
+    @PostMapping("/flash-sale")
     public ResponseEntity<ApiResponse<?>> createFlashSale(@Valid @RequestBody FlashSaleRequestDto requestDto,
                                                       @AuthenticationPrincipal UserDetailsImpl userDetails) {
         User user = userDetails.getUser();
@@ -48,7 +47,7 @@ public class FlashSaleController {
     }
 
     // 행사 수정
-    @PutMapping("/admin/update/{eventId}")
+    @PutMapping("/flash-sale/{eventId}")
     public ResponseEntity<ApiResponse<?>> updateFlashSale(@PathVariable Long eventId,
                                                       @Valid @RequestBody FlashSaleUpdateRequestDto requestDto,
                                                       @AuthenticationPrincipal UserDetailsImpl userDetails) {
@@ -58,7 +57,7 @@ public class FlashSaleController {
     }
 
     // 행사 오픈
-    @PutMapping("/admin/open/{eventId}")
+    @PutMapping("/flash-sale/open/{eventId}")
     public ResponseEntity<ApiResponse<?>> openFlashSale(@PathVariable Long eventId,
                                                         @AuthenticationPrincipal UserDetailsImpl userDetails) {
         User user = userDetails.getUser();
@@ -67,7 +66,7 @@ public class FlashSaleController {
     }
 
     // 행사 종료
-    @PutMapping("/admin/close/{eventId}")
+    @PutMapping("/flash-sale/close/{eventId}")
     public ResponseEntity<ApiResponse<?>> deleteFlashSale(@PathVariable Long eventId,
                                                       @AuthenticationPrincipal UserDetailsImpl userDetails) {
         User user = userDetails.getUser();
