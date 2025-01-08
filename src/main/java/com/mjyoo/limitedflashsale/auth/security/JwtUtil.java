@@ -1,6 +1,5 @@
 package com.mjyoo.limitedflashsale.auth.security;
 
-import com.mjyoo.limitedflashsale.common.config.EnvironmentConfig;
 import com.mjyoo.limitedflashsale.user.entity.UserRoleEnum;
 import io.jsonwebtoken.*;
 import io.jsonwebtoken.security.Keys;
@@ -11,6 +10,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
 import java.security.Key;
@@ -28,7 +28,7 @@ public class JwtUtil {
     //Token 식별자
     public static final String BEARER_PREFIX = "Bearer ";
     //Token 만료 시간
-    private final long TOKEN_EXPIRATION_MS = 60 * 60 * 1000L; // 1시간
+    private final long ACCESS_TOKEN_EXPIRATION_MS = 60 * 60 * 1000L; // 1시간
 
     //암호화된 secretKey를 실제 사용할 수 있는 Key 객체로 변환
     private Key key;
@@ -36,19 +36,19 @@ public class JwtUtil {
     private final SignatureAlgorithm signatureAlgorithm = SignatureAlgorithm.HS256;
     //로그 설정
     public static final Logger logger = LoggerFactory.getLogger("JWT 관련 로그");
-    private final EnvironmentConfig environmentConfig;
 
+    @Value("${JWT_SECRET_KEY}")
+    private String secretKey;
 
     @PostConstruct
     public void init() { //secretKey를 디코딩해서 key 변수에 할당
         //JWT를 암호화하거나 검증할 때 사용되는 비밀 키를 Base64 디코딩하여 Key 객체로 변환
-        String secretKey = environmentConfig.getJwtSecretKey();
         byte[] bytes = Base64.getDecoder().decode(secretKey);
         key = Keys.hmacShaKeyFor(bytes);
     }
 
-    //JWT 토큰 생성
-    public String createToken(String username, UserRoleEnum role) {
+    //JWT 엑세스 토큰 생성
+    public String createAccessToken(String username, UserRoleEnum role) {
         Date date = new Date();
 
         return BEARER_PREFIX +
@@ -56,7 +56,7 @@ public class JwtUtil {
                         .setSubject(username) //사용자 식별자값 (ID)
                         .claim(AUTHORIZATION_KEY, role) //사용자 권한
                         .setIssuedAt(date) //토큰 발급일
-                        .setExpiration(new Date(date.getTime() + TOKEN_EXPIRATION_MS)) //생성되는 시간 기준으로 만료 시간 계산
+                        .setExpiration(new Date(date.getTime() + ACCESS_TOKEN_EXPIRATION_MS)) //생성되는 시간 기준으로 만료 시간 계산
                         .signWith(key, signatureAlgorithm) //비밀 키와 암호화 알고리즘을 사용해 서명
                         .compact();
     }

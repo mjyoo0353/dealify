@@ -1,11 +1,14 @@
 spring:
-  application:
-    name: LimitedFlashSale
+  profiles:
+    include: secrets # 민감 정보 포함 파일
+
   datasource:
-    url: jdbc:mysql://localhost:3308/ecommerce_db
+    driver-class-name: com.mysql.cj.jdbc.Driver
+#    url: jdbc:mysql://localhost:3308/ecommerce_db
+    url: jdbc:mysql://mysql-db:3306/ecommerce_db
     username: ${DB_USERNAME}
     password: ${DB_PASSWORD}
-    driver-class-name: com.mysql.cj.jdbc.Driver
+
   jpa:
     hibernate:
       ddl-auto: update
@@ -13,11 +16,12 @@ spring:
     properties:
         hibernate:
             format_sql: true
+
   mail:
     host: smtp.gmail.com
-    port: 587 # Gmail SMTP ??? port (TLS): 587 ??
-    username: ${SPRING_MAIL_USERNAME}
-    password: ${SPRING_MAIL_PASSWORD}
+    port: 587 # Gmail SMTP 포트 (TLS)
+    username: ${MAIL_USERNAME}
+    password: ${MAIL_PASSWORD}
     properties:
       mail:
         smtp:
@@ -25,12 +29,22 @@ spring:
           starttls:
             enable: true
             required: true
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health, metrics, info, loggers
 
 logging:
   level:
-    org.springframework: INFO
-    #root: DEBUG
-    #org.hibernate: INFO
-    #org.springframework.security: INFO
-    #org.springframework.web: INFO
-    #org.springframework.http: INFO
+    org:
+      hibernate:
+        SQL: DEBUG
+        type:
+            descriptor:
+                sql: TRACE
+#      springframework:
+#        web: INFO
+#        security: INFO
+#        http: INFO
+#        test: DEBUG

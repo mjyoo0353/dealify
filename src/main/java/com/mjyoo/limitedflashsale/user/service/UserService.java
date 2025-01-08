@@ -1,6 +1,5 @@
 package com.mjyoo.limitedflashsale.user.service;
 
-import com.mjyoo.limitedflashsale.common.config.EnvironmentConfig;
 import com.mjyoo.limitedflashsale.common.exception.CustomException;
 import com.mjyoo.limitedflashsale.common.exception.ErrorCode;
 import com.mjyoo.limitedflashsale.user.dto.SignupRequestDto;
@@ -11,6 +10,7 @@ import com.mjyoo.limitedflashsale.user.entity.UserRoleEnum;
 import com.mjyoo.limitedflashsale.user.repository.UserRepository;
 import jakarta.mail.MessagingException;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -24,8 +24,9 @@ public class UserService {
 
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
-    private final EnvironmentConfig environmentConfig;
-    private String ADMIN_TOKEN;
+
+    @Value("${ADMIN_TOKEN}")
+    private String adminToken;
 
     public void signup(SignupRequestDto requestDto) throws MessagingException {
         String username = requestDto.getUsername();
@@ -47,8 +48,7 @@ public class UserService {
         //사용자 Role 확인
         UserRoleEnum role = UserRoleEnum.USER;
         if (requestDto.isAdmin()) {
-            ADMIN_TOKEN = environmentConfig.getAdminToken();
-            if (!ADMIN_TOKEN.equals(requestDto.getAdminToken())) {
+            if (!adminToken.equals(requestDto.getAdminToken())) {
                 throw new CustomException(ErrorCode.INVALID_ADMIN_TOKEN);
             }
             role = UserRoleEnum.ADMIN;
