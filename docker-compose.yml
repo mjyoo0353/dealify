@@ -11,10 +11,14 @@ services: #컨테이너 목록
       - "8081:8080" #로컬 8081 포트와 컨테이너 내의 8080 포트를 매핑
     depends_on:
       - mysql #mysql 서비스에 의존
+      - redis #redis 서비스에 의존
+
     environment:
       SPRING_DATABASE_URL: jdbc:mysql://mysql-db:3306/ecommerce_db
       SPRING_DATABASE_USERNAME: ${DB_USERNAME}
       SPRING_DATABASE_PASSWORD: ${DB_PASSWORD}
+      SPRING_REDIS_HOST: redis
+      SPRING_REDIS_PORT: 6379
 
   mysql:
     image: mysql:8.0
@@ -28,6 +32,14 @@ services: #컨테이너 목록
       MYSQL_DATABASE: ecommerce_db
       MYSQL_ROOT_PASSWORD: ${DB_PASSWORD}
 
+  redis:
+    image: redis:latest
+    container_name: redis
+    hostname: redis
+    ports:
+      - 6379:6379 # Redis 기본 포트
+    volumes:
+      - ./redis/data:/data
 
 volumes:
   mysql_data:
