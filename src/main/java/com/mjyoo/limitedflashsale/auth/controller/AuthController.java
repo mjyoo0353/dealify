@@ -1,5 +1,6 @@
 package com.mjyoo.limitedflashsale.auth.controller;
 
+import com.mjyoo.limitedflashsale.auth.dto.EmailVerificationDto;
 import com.mjyoo.limitedflashsale.auth.service.AuthService;
 import com.mjyoo.limitedflashsale.auth.service.EmailVerificationService;
 import com.mjyoo.limitedflashsale.common.dto.ApiResponse;
@@ -10,6 +11,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.io.UnsupportedEncodingException;
+
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/api/auth")
@@ -19,21 +22,21 @@ public class AuthController {
     private final EmailVerificationService emailVerificationService;
 
     //인증코드 이메일 전송
-    @PostMapping("/email-verification/send")
-    public ResponseEntity<?> sendVerificationEmail(@RequestParam String email) throws MessagingException {
+    @PostMapping("/send-verification-code")
+    public ResponseEntity<?> sendVerificationEmail(@RequestParam String email) throws MessagingException, UnsupportedEncodingException {
         emailVerificationService.sendVerificationEmail(email);
         return ResponseEntity.ok(ApiResponse.success("인증 코드가 이메일로 전송되었습니다."));
     }
 
     //인증코드 확인
-    @GetMapping("/email-verification/verify")
-    public ResponseEntity<?> verifyEmail(@RequestParam String email, @RequestParam String token) {
-        boolean isVerified = emailVerificationService.verifyEmail(email, token);
-        if (!isVerified) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                    .body(ApiResponse.fail("인증 코드가 올바르지 않습니다."));
+    @PostMapping("/verify-verification-code")
+    public ResponseEntity<?> verifyEmail(@RequestBody EmailVerificationDto emailVerificationDto) {
+        boolean isVerified = emailVerificationService.verifyEmail(emailVerificationDto.getEmail(), emailVerificationDto.getCode());
+        if (isVerified) {
+            return ResponseEntity.ok().body(ApiResponse.success("이메일 인증이 완료되었습니다."));
+        } else {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ApiResponse.fail("인증 코드가 일치하지 않습니다."));
         }
-        return ResponseEntity.ok().body(ApiResponse.success("이메일 인증이 완료되었습니다."));
     }
 
     /*//로그인

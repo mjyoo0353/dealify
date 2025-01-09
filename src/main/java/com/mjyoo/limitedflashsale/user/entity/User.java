@@ -33,8 +33,6 @@ public class User extends Timestamped {
     @Column(nullable = false)
     private String address;
 
-    private boolean isEmailVerified; // 이메일 인증 상태
-
     @Enumerated(EnumType.STRING)
     private UserRoleEnum role;
 
@@ -45,17 +43,13 @@ public class User extends Timestamped {
     private List<Order> orderList;
 
     @Builder
-    public User(String email, String username, String password, String phoneNumber, String address, boolean isEmailVerified, UserRoleEnum role) {
+    public User(String email, String username, String password, String phoneNumber, String address, UserRoleEnum role) {
         this.email = email;
         this.username = username;
         this.password = password;
         this.phoneNumber = phoneNumber;
         this.address = address;
-        this.isEmailVerified = isEmailVerified;
         this.role = role;
     }
 
-    public void setEmailVerified(boolean trueOrFalse) {
-        this.isEmailVerified = trueOrFalse;
-    }
 }

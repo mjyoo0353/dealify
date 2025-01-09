@@ -1,5 +1,6 @@
 package com.mjyoo.limitedflashsale.user.service;
 
+import com.mjyoo.limitedflashsale.auth.service.EmailVerificationService;
 import com.mjyoo.limitedflashsale.common.exception.CustomException;
 import com.mjyoo.limitedflashsale.common.exception.ErrorCode;
 import com.mjyoo.limitedflashsale.user.dto.SignupRequestDto;
@@ -24,11 +25,17 @@ public class UserService {
 
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
+    private final EmailVerificationService emailVerificationService;
 
     @Value("${ADMIN_TOKEN}")
     private String adminToken;
 
     public void signup(SignupRequestDto requestDto) throws MessagingException {
+        //이메일 인증 확인
+        if(!emailVerificationService.isEmailVerified(requestDto.getEmail())) {
+            throw new CustomException(ErrorCode.INVALID_EMAIL_VERIFICATION);
+        }
+
         String username = requestDto.getUsername();
         String email = requestDto.getEmail();
         String encodedPassword = passwordEncoder.encode(requestDto.getPassword());
@@ -61,7 +68,6 @@ public class UserService {
                 .password(encodedPassword)
                 .phoneNumber(requestDto.getPhoneNumber())
                 .address(requestDto.getAddress())
-                .isEmailVerified(false) //이메일 인증 전 상태
                 .role(role)
                 .build();
         userRepository.save(user);
@@ -98,7 +104,7 @@ public class UserService {
     }
 
     private void checkAdminRole(User user) {
-        if(!user.getRole().equals(UserRoleEnum.ADMIN)) {
+        if (!user.getRole().equals(UserRoleEnum.ADMIN)) {
             throw new CustomException(ErrorCode.FORBIDDEN);
         }
     }
@@ -110,7 +116,6 @@ public class UserService {
                 .email(user.getEmail())
                 .phoneNumber(user.getPhoneNumber())
                 .address(user.getAddress())
-                .isEmailVerified(user.isEmailVerified())
                 .role(user.getRole())
                 .build();
     }

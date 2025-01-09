@@ -13,5 +13,4 @@ public class UserResponseDto {
     String phoneNumber;
     String address;
     UserRoleEnum role;
-    boolean isEmailVerified;
 }
