@@ -1,11 +1,13 @@
 package com.mjyoo.limitedflashsale.auth.controller;
 
-import com.mjyoo.limitedflashsale.auth.dto.EmailVerificationDto;
+import com.mjyoo.limitedflashsale.auth.dto.*;
 import com.mjyoo.limitedflashsale.auth.service.AuthService;
 import com.mjyoo.limitedflashsale.auth.service.EmailVerificationService;
 import com.mjyoo.limitedflashsale.common.dto.ApiResponse;
 import jakarta.mail.MessagingException;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -39,12 +41,20 @@ public class AuthController {
         }
     }
 
-    /*//로그인
+    //로그인
     @PostMapping("/login")
     public ResponseEntity<?> login(@Valid @RequestBody LoginRequestDto requestDto, HttpServletResponse response) {
-        authService.login(requestDto, response);
-        return ResponseEntity.ok().body(ApiResponse.success("로그인 되었습니다."));
-    }*/
+        LoginResponseDto loginResponseDto = authService.login(requestDto, response);
+        return ResponseEntity.ok().body(ApiResponse.success("로그인 되었습니다.", loginResponseDto));
+    }
+
+    //Refresh Token 재발급
+    @PostMapping("/refresh-token")
+    public ResponseEntity<?> refreshToken(@RequestBody RefreshTokenRequestDto requestDto,
+                                          HttpServletRequest request, HttpServletResponse response) {
+        String newAccessToken = authService.refreshToken(requestDto, request, response);
+        return ResponseEntity.ok().body(ApiResponse.success(newAccessToken));
+    }
 
     //로그아웃
     @PostMapping("/logout")

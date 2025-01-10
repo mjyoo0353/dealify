@@ -28,9 +28,6 @@ public class JwtAuthorizationFilter extends OncePerRequestFilter {
     //요청이 들어올 때마다 doFilterInternal 메서드가 호출되어 JWT를 처리
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {
-
-        log.info("Processing request: {}", request.getRequestURI());
-        //헤더에서 JWT를 가져옴
         String tokenValue = jwtUtil.getJwtFromHeader(request);
 
         //JWT가 존재하면 유효성 검사를 수행

@@ -1,3 +1,4 @@
+/*
 package com.mjyoo.limitedflashsale.auth.security;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -15,18 +16,21 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 
 import java.io.IOException;
 
+*/
+/**
+ * UsernamePasswordAuthenticationFilter는 스프링 시큐리티의 기본 로그인 처리 필터로
+ * 기본적으로 session 방식으로 동작함
+ * 토큰 기반 인증을 구현하려면 customized filter 사용해서 구현이 필요
+ *//*
+
 @Slf4j(topic = "로그인 및 JWT 생성")
 public class JwtAuthenticationFilter extends UsernamePasswordAuthenticationFilter {
-    /*UsernamePasswordAuthenticationFilter을 그대로 사용하면 session 방식이므로 직접 사용하지 않고
-    JWT 인증 방식에 맞게 customized filter 사용
-    로그인 처리는 controller와 service단에서 구현안하고 filter단에서 구현함*/
-
     //JWT 토큰 생성을 위한 JwtUtil 주입
     private final JwtUtil jwtUtil;
 
     public JwtAuthenticationFilter(JwtUtil jwtUtil) {
         this.jwtUtil = jwtUtil;
-        setFilterProcessesUrl("/api/user/login");
+        setFilterProcessesUrl("/api/auth/login");
     }
 
     //로그인 요청을 처리 (사용자 정보를 읽고 인증 시도)
@@ -43,7 +47,7 @@ public class JwtAuthenticationFilter extends UsernamePasswordAuthenticationFilte
                     )
             );
         } catch (IOException e) {
-            log.error(e.getMessage());
+            log.error("로그인 요청 처리 중 오류: {}", e.getMessage());
             throw new RuntimeException(e.getMessage());
         }
     }
@@ -57,7 +61,7 @@ public class JwtAuthenticationFilter extends UsernamePasswordAuthenticationFilte
         UserRoleEnum role = ((UserDetailsImpl) authResult.getPrincipal()).getUser().getRole();
 
         //사용자 정보를 바탕으로 JWT 토큰 생성
-        String token = jwtUtil.createToken(email, role);
+        String token = jwtUtil.createAccessToken(email, role);
         //생성된 JWT을 응답 헤더(Authorization)에 추가
         response.addHeader(JwtUtil.AUTHORIZATION_HEADER, token);
     }
@@ -66,7 +70,6 @@ public class JwtAuthenticationFilter extends UsernamePasswordAuthenticationFilte
     @Override
     protected void unsuccessfulAuthentication(HttpServletRequest request, HttpServletResponse response, AuthenticationException failed) throws IOException, ServletException {
         log.info("로그인 실패");
-        //인증 실패시 401 status code 반환
-        response.setStatus(401);
     }
 }
+*/
