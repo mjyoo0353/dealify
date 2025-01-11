@@ -33,8 +33,7 @@ public class Product extends Timestamped {
     @Column(nullable = false)
     private boolean isDeleted = false;
 
-    @OneToOne(fetch = FetchType.EAGER, cascade = {CascadeType.PERSIST, CascadeType.MERGE})
-    @JoinColumn(name = "inventory_id")
+    @OneToOne(mappedBy = "product")
     private Inventory inventory;
 
     @OneToMany(mappedBy = "product")
