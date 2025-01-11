@@ -19,14 +19,31 @@ public enum ErrorCode {
     PRODUCT_NOT_FOUND("해당 상품 정보를 찾을 수 없습니다."),
     INVALID_PRICE("가격이 유효하지 않습니다. 최소 $1 이상의 가격을 입력해주세요."),
 
+    // Inventory
+    CONFLICT_UPDATE_STOCK("재고 처리 중 충돌이 발생했습니다. 다시 시도해주세요."),
+
     // Order
     ORDER_NOT_FOUND("해당 주문 정보를 찾을 수 없습니다."),
     OUT_OF_STOCK("재고가 부족합니다."),
 
     // Cart
     CART_NOT_FOUND("해당 장바구니 정보를 찾을 수 없습니다."),
-    CART_PRODUCT_NOT_FOUND("해당 장바구니 상품 정보를 찾을 수 없습니다."),
+    CART_PRODUCT_NOT_FOUND("장바구니에 상품이 없습니다."),
+    INVALID_QUANTITY("수량이 유효하지 않습니다."),
 
+    // FlashSale
+    FLASH_SALE_NOT_FOUND("해당 이벤트 정보를 찾을 수 없습니다."),
+    FLASH_SALE_NOT_STARTED("행사 시작 시간이 아닙니다."),
+    FLASH_SALE_NOT_ACTIVE("현재 행사가 진행 중이 아닙니다."),
+    INVALID_UPDATE_FLASH_SALE("종료된 행사는 수정이 불가합니다."),
+
+    // Payment
+    PAYMENT_FAILED("결제에 실패하였습니다."),
+
+    // Auth
+    INVALID_EMAIL_VERIFICATION("이메일 인증이 필요합니다."),
+    TOKEN_CREATION_ERROR("토큰 생성에 실패하였습니다."),
+    MISSING_REFRESH_TOKEN("리프레시 토큰이 없습니다."),
 
     // Common
     BAD_REQUEST("잘못된 요청입니다. 다시 시도해 주세요."), //400
