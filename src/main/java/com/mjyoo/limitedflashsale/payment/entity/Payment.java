@@ -25,7 +25,8 @@ public class Payment extends Timestamped {
     @Column(nullable = false)
     private PaymentStatus status;
 
-    @OneToOne(mappedBy = "payment")
+    @OneToOne
+    @JoinColumn(name = "order_id")
     private Order order;
 
     @Builder
