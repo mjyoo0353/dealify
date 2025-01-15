@@ -5,6 +5,7 @@ import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
+import lombok.Builder;
 import lombok.Getter;
 
 import java.math.BigDecimal;
@@ -23,4 +24,10 @@ public class ProductRequestDto {
     @Min(value = 1, message = "수량은 1 이상이어야 합니다.")
     private int stock;
 
+    @Builder
+    public ProductRequestDto(String name, BigDecimal price, int stock) {
+        this.name = name;
+        this.price = price;
+        this.stock = stock;
+    }
 }

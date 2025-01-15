@@ -12,24 +12,42 @@ import com.mjyoo.limitedflashsale.user.entity.UserRoleEnum;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Slice;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
+
 
 @Service
 @RequiredArgsConstructor
 public class ProductService {
 
     private final ProductRepository productRepository;
+    private final RedisTemplate<String, Object> redisTemplate;
     private static final BigDecimal MIN_PRICE = new BigDecimal("1");
+
 
     // 단일 상품 조회 (삭제되지 않은 데이터)
     public ProductResponseDto getProduct(Long productId) {
+        String key = "product:" + productId;
+        ProductResponseDto cachedStock = (ProductResponseDto) redisTemplate.opsForValue().get(key);
+
+        if (cachedStock != null) {
+            return cachedStock;
+        }
+
+        // Cache Miss 처리 - 캐시에 없는 경우 DB에서 조회 후 캐시에 저장
         Product product = getProductById(productId);
-        return new ProductResponseDto(product);
+        ProductResponseDto productResponseDto = new ProductResponseDto(product);
+
+        // DB에서 가져온 데이터 캐싱
+        redisTemplate.opsForValue().setIfAbsent(key, productResponseDto, 30, TimeUnit.MINUTES);
+
+        return productResponseDto;
     }
 
     // 상품 목록 조회 (Active 상품만 조회)

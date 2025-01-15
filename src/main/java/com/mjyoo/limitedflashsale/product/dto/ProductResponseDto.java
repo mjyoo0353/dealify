@@ -2,11 +2,15 @@ package com.mjyoo.limitedflashsale.product.dto;
 
 
 import com.mjyoo.limitedflashsale.product.entity.Product;
-import lombok.Getter;
+import lombok.*;
+
 import java.math.BigDecimal;
 import java.time.format.DateTimeFormatter;
 
 @Getter
+@Setter
+@AllArgsConstructor
+@NoArgsConstructor
 public class ProductResponseDto {
     private Long id;
     private String name;
@@ -16,6 +20,7 @@ public class ProductResponseDto {
     private String createdAt;
     private String modifiedAt;
 
+    @Builder
     public ProductResponseDto(Product product) {
         this.id = product.getId();
         this.name = product.getName();
@@ -27,4 +32,5 @@ public class ProductResponseDto {
         this.createdAt = product.getCreatedAt().format(formatter);
         this.modifiedAt = product.getModifiedAt().format(formatter);
     }
+
 }
