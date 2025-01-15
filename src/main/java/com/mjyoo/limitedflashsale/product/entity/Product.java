@@ -33,7 +33,7 @@ public class Product extends Timestamped {
     @Column(nullable = false)
     private boolean isDeleted = false;
 
-    @OneToOne(mappedBy = "product")
+    @OneToOne(mappedBy = "product", fetch = FetchType.EAGER, cascade = CascadeType.ALL)
     private Inventory inventory;
 
     @OneToMany(mappedBy = "product")

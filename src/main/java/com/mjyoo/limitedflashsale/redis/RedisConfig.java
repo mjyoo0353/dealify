@@ -1,5 +1,6 @@
 package com.mjyoo.limitedflashsale.redis;
 
+import com.mjyoo.limitedflashsale.product.dto.ProductResponseDto;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
@@ -24,9 +25,25 @@ public class RedisConfig {
     private int redisPort;
 
     @Bean
-    public RedisTemplate<String, Object> redisTemplate(RedisConnectionFactory connectionFactory) {
-        RedisTemplate<String, Object> template = new RedisTemplate<>();
+    public RedisTemplate<String, Integer> redisTemplate(RedisConnectionFactory connectionFactory) {
+        return createRedisTemplate(connectionFactory, Integer.class);
+    }
+
+    @Bean
+    public RedisTemplate<String, ProductResponseDto> productRedisTemplate(RedisConnectionFactory connectionFactory) {
+        return createRedisTemplate(connectionFactory, ProductResponseDto.class);
+    }
+
+    @Bean
+    public RedisConnectionFactory redisConnectionFactory() {
+        return new LettuceConnectionFactory(redisHost, redisPort);
+    }
+
+    private <T> RedisTemplate<String, T> createRedisTemplate(RedisConnectionFactory connectionFactory,
+                                                             Class<T> valueType) {
+        RedisTemplate<String, T> template = new RedisTemplate<>();
         template.setConnectionFactory(connectionFactory);
+
         // 키 직렬화 방식 설정 (String)
         StringRedisSerializer stringSerializer = new StringRedisSerializer();
         template.setKeySerializer(stringSerializer);
@@ -39,11 +56,6 @@ public class RedisConfig {
 
         template.afterPropertiesSet();
         return template;
-    }
-
-    @Bean
-    public RedisConnectionFactory redisConnectionFactory() {
-        return new LettuceConnectionFactory(redisHost, redisPort);
     }
 
 }

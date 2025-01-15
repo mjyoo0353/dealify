@@ -9,6 +9,7 @@ import java.time.format.DateTimeFormatter;
 
 @Getter
 @Setter
+@Builder
 @AllArgsConstructor
 @NoArgsConstructor
 public class ProductResponseDto {
@@ -20,7 +21,6 @@ public class ProductResponseDto {
     private String createdAt;
     private String modifiedAt;
 
-    @Builder
     public ProductResponseDto(Product product) {
         this.id = product.getId();
         this.name = product.getName();
@@ -31,6 +31,16 @@ public class ProductResponseDto {
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
         this.createdAt = product.getCreatedAt().format(formatter);
         this.modifiedAt = product.getModifiedAt().format(formatter);
+    }
+
+    public ProductResponseDto(ProductResponseDto product, int stock) {
+        this.id = product.getId();
+        this.name = product.getName();
+        this.price = product.getPrice();
+        this.stock = stock;
+        this.isDeleted = product.isDeleted();
+        this.createdAt = product.getCreatedAt();
+        this.modifiedAt = product.getModifiedAt();
     }
 
 }

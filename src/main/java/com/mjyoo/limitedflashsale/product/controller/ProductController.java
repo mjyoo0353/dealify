@@ -27,7 +27,6 @@ public class ProductController {
     public ResponseEntity<ApiResponse<ProductResponseDto>> getProduct(@PathVariable Long productId) {
         ProductResponseDto product = productService.getProduct(productId);
         return ResponseEntity.ok(ApiResponse.success(product));
-
     }
 
     //상품 목록 조회
