@@ -18,7 +18,7 @@ public class Inventory extends Timestamped {
     @Column(nullable = false)
     private int stock;
 
-    @OneToOne(fetch = FetchType.EAGER, cascade = {CascadeType.PERSIST, CascadeType.MERGE})
+    @OneToOne
     @JoinColumn(name = "product_id")
     private Product product;
 
@@ -46,7 +46,4 @@ public class Inventory extends Timestamped {
         this.stock += quantity;
     }
 
-    public void setStock(int initialStock) {
-        this.stock = initialStock;
-    }
 }

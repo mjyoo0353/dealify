@@ -32,18 +32,16 @@ public class ProductService {
 
     private final ProductRepository productRepository;
     private final RedisTemplate<String, ProductResponseDto> productRedisTemplate;
-    private final RedisTemplate<String, Integer> inventoryRedisTemplate;
-    private final InventoryRepository inventoryRepository;
+    private final InventoryService inventoryService;
     private static final BigDecimal MIN_PRICE = new BigDecimal("1");
     private static final String PRODUCT_CACHE_KEY = "product:";
-    private static final String INVENTORY_CACHE_KEY = "inventory:";
 
     // 단일 상품 조회 (삭제되지 않은 데이터)
     public ProductResponseDto getProduct(Long productId) {
         // 상품 정보 조회
         ProductResponseDto product = getProductFromCache(productId);
         // 재고 정보 조회
-        int stock = getStockFromCache(productId);
+        int stock = inventoryService.getStockFromCache(productId);
 
         return new ProductResponseDto(product, stock);
     }
@@ -126,14 +124,14 @@ public class ProductService {
 
         try{
             String productKey = PRODUCT_CACHE_KEY + productId;
-            String inventoryKey = INVENTORY_CACHE_KEY + productId;
-            // 캐시 무효화 (삭제)
+            // 상품 정보 캐시 무효화 (삭제)
             productRedisTemplate.delete(productKey);
-            inventoryRedisTemplate.delete(inventoryKey);
+
+            // 재고 정보 캐시 업데이트
+            inventoryService.updateStock(productId, stock);
         } catch (Exception e) {
             log.error("Cache update failed for productId: {}", productId, e);
         }
-
         return new ProductResponseDto(product);
     }
 
@@ -160,22 +158,6 @@ public class ProductService {
         ProductResponseDto productResponseDto = new ProductResponseDto(product);
         productRedisTemplate.opsForValue().setIfAbsent(key, productResponseDto, 5, TimeUnit.MINUTES);
         return productResponseDto;
-    }
-
-    private int getStockFromCache(Long productId) {
-        String key = INVENTORY_CACHE_KEY + productId;
-        Integer cachedStock = inventoryRedisTemplate.opsForValue().get(key);
-
-        if (cachedStock != null) {
-            return cachedStock;
-        }
-
-        // Cache Miss 처리 - DB 조회 후 캐시 저장
-        Inventory inventory = inventoryRepository.findByProductId(productId)
-                .orElseThrow(() -> new CustomException(ErrorCode.PRODUCT_NOT_FOUND));
-        int stock = inventory.getStock();
-        inventoryRedisTemplate.opsForValue().setIfAbsent(key, stock, 5, TimeUnit.MINUTES);
-        return stock;
     }
 
     private Slice<Product> getProductsByCursor(Long cursor, PageRequest pageRequest) {
