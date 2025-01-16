@@ -33,14 +33,4 @@ public class ProductResponseDto {
         this.modifiedAt = product.getModifiedAt().format(formatter);
     }
 
-    public ProductResponseDto(ProductResponseDto product, int stock) {
-        this.id = product.getId();
-        this.name = product.getName();
-        this.price = product.getPrice();
-        this.stock = stock;
-        this.isDeleted = product.isDeleted();
-        this.createdAt = product.getCreatedAt();
-        this.modifiedAt = product.getModifiedAt();
-    }
-
 }

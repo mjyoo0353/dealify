@@ -5,6 +5,7 @@ import com.mjyoo.limitedflashsale.common.dto.ApiResponse;
 import com.mjyoo.limitedflashsale.product.dto.ProductRequestDto;
 import com.mjyoo.limitedflashsale.product.dto.ProductListResponseDto;
 import com.mjyoo.limitedflashsale.product.dto.ProductResponseDto;
+import com.mjyoo.limitedflashsale.product.service.InventoryService;
 import com.mjyoo.limitedflashsale.product.service.ProductService;
 import com.mjyoo.limitedflashsale.user.entity.User;
 import com.mjyoo.limitedflashsale.user.entity.UserRoleEnum;
@@ -21,6 +22,14 @@ import org.springframework.web.bind.annotation.*;
 public class ProductController {
 
     private final ProductService productService;
+    private final InventoryService inventoryService;
+
+    //재고 조회
+    @GetMapping("/product/{productId}/stock")
+    public ResponseEntity<ApiResponse<?>> getStock(@PathVariable Long productId) {
+        int stockFromCache = inventoryService.getStockFromCache(productId);
+        return ResponseEntity.ok(ApiResponse.success(stockFromCache));
+    }
 
     //상품 조회
     @GetMapping("/product/{productId}")
