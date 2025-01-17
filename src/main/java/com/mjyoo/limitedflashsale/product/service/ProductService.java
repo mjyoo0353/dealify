@@ -29,7 +29,7 @@ import java.util.concurrent.TimeUnit;
 public class ProductService {
 
     private final ProductRepository productRepository;
-    private final RedisTemplate<String, ProductResponseDto> productRedisTemplate;
+    private final RedisTemplate<String, Object> redisTemplate;
     private final InventoryService inventoryService;
     private static final BigDecimal MIN_PRICE = new BigDecimal("1");
     private static final String PRODUCT_CACHE_KEY = "product:";
@@ -38,7 +38,7 @@ public class ProductService {
     public ProductResponseDto getProduct(Long productId) {
         // 상품 정보 조회
         String key = PRODUCT_CACHE_KEY + productId;
-        ProductResponseDto cachedProduct = productRedisTemplate.opsForValue().get(key);
+        ProductResponseDto cachedProduct = (ProductResponseDto) redisTemplate.opsForValue().get(key);
 
         if (cachedProduct != null) {
             return cachedProduct;
@@ -47,9 +47,14 @@ public class ProductService {
         // Cache Miss 처리 - DB 조회 후 캐시 저장
         Product product = getProductById(productId);
         ProductResponseDto productResponseDto = new ProductResponseDto(product);
-        productRedisTemplate.opsForValue().setIfAbsent(key, productResponseDto, 10, TimeUnit.MINUTES);
+        redisTemplate.opsForValue().setIfAbsent(key, productResponseDto, 10, TimeUnit.MINUTES);
 
         return productResponseDto;
+    }
+
+    public ProductResponseDto getProductDB(Long productId) {
+        Product product = getProductById(productId);
+        return new ProductResponseDto(product);
     }
 
     // 상품 목록 조회 (Active 상품만 조회)
@@ -125,10 +130,10 @@ public class ProductService {
         try{
             String productKey = PRODUCT_CACHE_KEY + productId;
             // 상품 정보 캐시 무효화 (삭제)
-            productRedisTemplate.delete(productKey);
+            redisTemplate.delete(productKey);
 
             // 재고 정보 캐시 업데이트
-            inventoryService.updateStock(productId, stock);
+            inventoryService.updateStockInRedis(productId, stock);
         } catch (Exception e) {
             log.error("Cache update failed for productId: {}", productId, e);
         }
@@ -166,7 +171,7 @@ public class ProductService {
     }
 
     private Product getProductById(Long productId) {
-        return productRepository.findById(productId)
+        return productRepository.findByIdWithInventory(productId)
                 .filter(product -> !product.isDeleted())
                 .orElseThrow(() -> new CustomException(ErrorCode.PRODUCT_NOT_FOUND));
     }

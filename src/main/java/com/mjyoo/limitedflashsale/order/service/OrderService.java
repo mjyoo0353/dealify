@@ -4,7 +4,6 @@ import com.mjyoo.limitedflashsale.cart.dto.CartRequestDto;
 import com.mjyoo.limitedflashsale.cart.entity.Cart;
 import com.mjyoo.limitedflashsale.cart.entity.CartProduct;
 import com.mjyoo.limitedflashsale.cart.repository.CartRepository;
-import com.mjyoo.limitedflashsale.common.dto.ApiResponse;
 import com.mjyoo.limitedflashsale.common.exception.CustomException;
 import com.mjyoo.limitedflashsale.common.exception.ErrorCode;
 import com.mjyoo.limitedflashsale.flashsale.entity.FlashSale;
@@ -20,19 +19,20 @@ import com.mjyoo.limitedflashsale.order.entity.Order;
 import com.mjyoo.limitedflashsale.order.entity.OrderProduct;
 import com.mjyoo.limitedflashsale.order.entity.OrderStatus;
 import com.mjyoo.limitedflashsale.payment.dto.PaymentRequestDto;
-import com.mjyoo.limitedflashsale.payment.entity.Payment;
+import com.mjyoo.limitedflashsale.payment.dto.PaymentResponseDto;
 import com.mjyoo.limitedflashsale.payment.entity.PaymentStatus;
 import com.mjyoo.limitedflashsale.payment.service.PaymentService;
 import com.mjyoo.limitedflashsale.product.entity.Product;
 import com.mjyoo.limitedflashsale.order.repository.OrderProductRepository;
 import com.mjyoo.limitedflashsale.order.repository.OrderRepository;
 import com.mjyoo.limitedflashsale.product.repository.ProductRepository;
+import com.mjyoo.limitedflashsale.product.service.InventoryService;
 import com.mjyoo.limitedflashsale.user.entity.User;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.jetbrains.annotations.NotNull;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Slice;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -40,6 +40,7 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 
 @Slf4j
@@ -54,6 +55,8 @@ public class OrderService {
     private final FlashSaleProductRepository flashSaleProductRepository;
     private final FlashSaleRepository flashSaleRepository;
     private final PaymentService paymentService;
+    private final InventoryService inventoryService;
+    private final RedisTemplate<String, Object> redisTemplate;
 
     //주문 내역 상세 조회
     public OrderResponseDto getOrder(Long orderId, User user) {
@@ -98,13 +101,17 @@ public class OrderService {
     //주문 생성 (단일 상품)
     @Transactional
     public Long createOrder(OrderRequestDto requestDto, User user) {
+        // 상품 조회
+        Product product = productRepository.findById(requestDto.getProductId())
+                .filter(prod -> !prod.isDeleted())
+                .orElseThrow(() -> new CustomException(ErrorCode.PRODUCT_NOT_FOUND));
 
-        //상품 조회 및 재고 확인
         int quantity = requestDto.getQuantity();
-        Product product = getValidProduct(requestDto.getProductId(), quantity);
 
-        //재고 업데이트 (감소)
-        product.getInventory().decreaseStock(quantity);
+        // 재고 확인
+        if (product.getInventory().getStock() < quantity) {
+            throw new CustomException(ErrorCode.OUT_OF_STOCK);
+        }
 
         //해당 상품이 행사 상품인지 확인
         FlashSaleProduct flashSaleProduct = flashSaleProductRepository.findByProductId(product.getId())
@@ -120,12 +127,12 @@ public class OrderService {
             FlashSale flashSale = flashSaleProduct.getFlashSale();
 
             // 행사 시작 시간이 현재 시간보다 미래인지 확인하고 미래라면 예외 발생
-            if(LocalDateTime.now().isBefore(flashSale.getStartTime())) {
+            if (LocalDateTime.now().isBefore(flashSale.getStartTime())) {
                 throw new CustomException(ErrorCode.FLASH_SALE_NOT_STARTED);
             }
 
             // 행사 상품이 ACTIVE 상태인지 확인
-            if(!FlashSaleStatus.ACTIVE.equals(flashSale.getStatus())) {
+            if (!FlashSaleStatus.ACTIVE.equals(flashSale.getStatus())) {
                 throw new CustomException(ErrorCode.FLASH_SALE_NOT_ACTIVE);
             }
 
@@ -138,6 +145,7 @@ public class OrderService {
             if (product.getInventory().getStock() == 0) {
                 flashSaleProduct.setStatus(FlashSaleProductStatus.OUT_OF_STOCK);
                 flashSaleProductRepository.save(flashSaleProduct);
+
                 flashSale.setStatus(FlashSaleStatus.ENDED);
                 flashSaleRepository.save(flashSale);
             }
@@ -149,7 +157,12 @@ public class OrderService {
         }
 
         //주문 생성
-        Order order = createOrder(user);
+        Order order = Order.builder()
+                .user(user)
+                .status(OrderStatus.ORDER_PROCESSING)
+                .orderProductList(new ArrayList<>())
+                .build();
+        orderRepository.save(order);
 
         //주문 상품 생성
         OrderProduct orderProduct = OrderProduct.builder()
@@ -166,10 +179,31 @@ public class OrderService {
         order.getOrderProductList().add(orderProduct);
         orderProductRepository.save(orderProduct);
 
-        //결제 처리
-        processPayment(user, order, totalPriceToApply);
+        // 주문 TTL 설정 (5분)
+        String orderTimeoutKey = "order:timeout:" + order.getId();
+        redisTemplate.opsForValue().set(orderTimeoutKey, order.getId(), 5, TimeUnit.MINUTES);
 
-        return order.getId();
+        try {
+            // 재고 차감 처리 (DB 업데이트 + 레디스 캐시 업데이트)
+            inventoryService.decreaseStock(product.getId(), quantity);
+
+            //결제 시도
+            PaymentRequestDto paymentRequestDto = PaymentRequestDto.builder()
+                    .orderId(order.getId())
+                    .totalAmount(totalPriceToApply)
+                    .build();
+
+            PaymentResponseDto paymentResult = paymentService.processPayment(paymentRequestDto, user);
+
+            //결제 실패시 재고 복구
+            if (paymentResult.getStatus().equals(OrderStatus.PAYMENT_FAILED.name())) {
+                inventoryService.restoreStock(order);
+            }
+            return order.getId();
+        } catch (Exception e) {
+            // 결제 도중 이탈 시에는 TTL로 처리되도록 함 (5분 뒤 재고 복구)
+            throw e;
+        }
     }
 
     //주문 생성 (장바구니 상품)
@@ -181,7 +215,12 @@ public class OrderService {
                 .orElseThrow(() -> new CustomException(ErrorCode.CART_NOT_FOUND));
 
         //주문 생성
-        Order order = createOrder(user);
+        Order order = Order.builder()
+                .user(user)
+                .status(OrderStatus.ORDER_PROCESSING)
+                .orderProductList(new ArrayList<>())
+                .build();
+        orderRepository.save(order);
 
         // 주문 상품 리스트 생성
         List<OrderProduct> orderProductList = new ArrayList<>();
@@ -203,7 +242,7 @@ public class OrderService {
             }
 
             //상품 조회 및 재고 확인
-            Product product = getValidProduct(productId, quantity);
+            Product product = getProduct(productId);
 
             //재고 업데이트 (감소)
             product.getInventory().decreaseStock(quantity);
@@ -241,12 +280,16 @@ public class OrderService {
         //주문 조회
         Order order = getOrderById(orderId);
 
+        if (OrderStatus.CANCELED.equals(order.getStatus())) {
+            throw new CustomException(ErrorCode.BAD_REQUEST);
+        }
+
         // 주문 취소 권한 확인
         ValidateOrderUser(user, order);
-
         // 주문 상태 변경
-        //order.setStatus(OrderStatus.CANCELED);
-        orderRepository.updateOrderStatusToCanceled(orderId, OrderStatus.CANCELED);
+        order.setStatus(OrderStatus.CANCELED);
+        // 결제 상태 변경
+        order.getPayment().setStatus(PaymentStatus.CANCELED);
 
         //취소된 주문에 대한 모든 상품 처리
         for (OrderProduct orderProduct : order.getOrderProductList()) {
@@ -257,24 +300,6 @@ public class OrderService {
         orderRepository.save(order);
     }
 
-    @NotNull
-    private Order createOrder(User user) {
-        // 초기 상태 설정
-        Payment payment = Payment.builder()
-                .status(PaymentStatus.PENDING)
-                .totalAmount(BigDecimal.ZERO)
-                .build();
-
-        Order order = Order.builder()
-                .user(user)
-                .status(OrderStatus.ORDER_PROCESSING)
-                .orderProductList(new ArrayList<>())
-                .payment(payment)
-                .build();
-        orderRepository.save(order);
-        return order;
-    }
-
     private void processPayment(User user, Order order, BigDecimal totalPriceToApply) {
         PaymentRequestDto paymentRequestDto = PaymentRequestDto.builder()
                 .orderId(order.getId())
@@ -283,18 +308,11 @@ public class OrderService {
         paymentService.processPayment(paymentRequestDto, user);
     }
 
-
-    private Product getValidProduct(Long productId, int quantity) {
+    public Product getProduct(Long productId) {
         //삭제되지 않은 상품 조회
-        Product product = productRepository.findById(productId)
+        return productRepository.findById(productId)
                 .filter(prod -> !prod.isDeleted())
                 .orElseThrow(() -> new CustomException(ErrorCode.PRODUCT_NOT_FOUND));
-
-        //재고 확인
-        if (product.getInventory().getStock() < quantity) {
-            throw new CustomException(ErrorCode.OUT_OF_STOCK);
-        }
-        return product;
     }
 
     private void ValidateOrderUser(User user, Order order) {

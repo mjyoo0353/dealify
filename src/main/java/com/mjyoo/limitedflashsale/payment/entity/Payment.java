@@ -36,5 +36,8 @@ public class Payment extends Timestamped {
         this.order = order;
     }
 
+    public void setStatus(PaymentStatus paymentStatus) {
+        this.status = paymentStatus;
+    }
 }
 

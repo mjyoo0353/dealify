@@ -1,5 +1,5 @@
 package com.mjyoo.limitedflashsale.payment.entity;
 
 public enum PaymentStatus {
-    PENDING, SUCCESS, CANCELLED
+    PENDING, SUCCESS, PAYMENT_FAILED, CANCELED
 }
