@@ -48,7 +48,7 @@ public class AuthController {
         return ResponseEntity.ok().body(ApiResponse.success("로그인 되었습니다.", loginResponseDto));
     }
 
-    //Refresh Token 재발급
+    //Access Token 재발급
     @PostMapping("/refresh-token")
     public ResponseEntity<?> refreshToken(@RequestBody RefreshTokenRequestDto requestDto,
                                           HttpServletRequest request, HttpServletResponse response) {

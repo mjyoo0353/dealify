@@ -52,6 +52,7 @@ public class EmailVerificationService {
         // 이메일과 인증 코드를 Redis에 저장
         String key = SIGNUP_CODE_PREFIX + email;
         redisTemplate.opsForValue().set(key, code, 5, TimeUnit.MINUTES);
+        log.info("Verification code: {}", code);
     }
 
     public MimeMessage createVerificationMessage(String email, String code) throws MessagingException, UnsupportedEncodingException {

@@ -34,6 +34,7 @@ public class User extends Timestamped {
     private String address;
 
     @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
     private UserRoleEnum role;
 
     @OneToOne(mappedBy = "user")

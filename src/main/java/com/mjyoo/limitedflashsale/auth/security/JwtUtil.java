@@ -34,7 +34,7 @@ public class JwtUtil {
     private static final long REFRESH_TOKEN_EXPIRATION_TIME = 1000 * 60 * 60 * 24 * 7; // 7일
 
     //암호화된 secretKey를 실제 사용할 수 있는 Key 객체로 변환
-    private Key key;
+    protected Key key;
     //JWT를 생성할 때 사용할 암호화 알고리즘 - HMAC SHA-256 사용
     private final SignatureAlgorithm signatureAlgorithm = SignatureAlgorithm.HS256;
     //로그 설정

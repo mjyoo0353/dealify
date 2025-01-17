@@ -61,10 +61,9 @@ public class AuthService {
         } catch (TokenCreationException e) {
             throw new CustomException(ErrorCode.TOKEN_CREATION_ERROR);
         }
-
     }
 
-    //Refresh Token 재발급
+    //Access Token 재발급
     public String refreshToken(RefreshTokenRequestDto requestDto, HttpServletRequest request, HttpServletResponse response) {
 
         // Refresh Token이 없을 경우 예외 처리
@@ -101,8 +100,8 @@ public class AuthService {
         String refreshToken = jwtUtil.createRefreshToken(user.getEmail(), user.getRole());
 
         // Redis에 Refresh Token 저장
-        String redisKey = "refresh_token:" + refreshToken;
-        redisTemplate.opsForValue().set(redisKey, user.getEmail(), JwtUtil.getRefreshTokenExpirationTime(), TimeUnit.MILLISECONDS);
+        String redisKey = "email:" + user.getEmail();
+        redisTemplate.opsForValue().set(redisKey, refreshToken, JwtUtil.getRefreshTokenExpirationTime(), TimeUnit.MILLISECONDS);
         log.info("Generated Refresh Token: {}", refreshToken);
 
         // Refresh Token을 Response Header에 추가
