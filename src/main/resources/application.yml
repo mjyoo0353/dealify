@@ -1,11 +1,11 @@
 spring:
   profiles:
-    include: secrets # 민감 정보 포함 파일
+    active: secrets # 민감 정보 포함 파일
 
   datasource:
     driver-class-name: com.mysql.cj.jdbc.Driver
-#    url: jdbc:mysql://localhost:3308/ecommerce_db
-    url: jdbc:mysql://mysql-db:3306/ecommerce_db
+    url: jdbc:mysql://localhost:3308/ecommerce_db
+    #url: jdbc:mysql://mysql-db:3306/ecommerce_db
     username: ${DB_USERNAME}
     password: ${DB_PASSWORD}
 
@@ -14,6 +14,7 @@ spring:
       ddl-auto: update
     show-sql: true
     properties:
+        dialect: org.hibernate.dialect.MySQL8Dialect
         hibernate:
             format_sql: true
 
@@ -29,21 +30,36 @@ spring:
           starttls:
             enable: true
             required: true
+
+  redis:
+    host: localhost
+    port: 6379
+
 management:
   endpoints:
     web:
       exposure:
         include: health, metrics, info, loggers
 
+scheduler:
+  order:
+    sync-time: "1 * * * * *" # 매 분 1초에 실행
+
 logging:
   level:
+    root: INFO
+    com.mjyoo.limitedflashsale: DEBUG
     org:
       hibernate:
-        SQL: DEBUG
+        SQL: INFO
         type:
-            descriptor:
-                sql: TRACE
-#      springframework:
+          descriptor:
+            sql: INFO
+      springframework:
+        cache: TRACE
+        web: INFO
+        security: INFO
+        redis: DEBUG
 #        web: INFO
 #        security: INFO
 #        http: INFO
