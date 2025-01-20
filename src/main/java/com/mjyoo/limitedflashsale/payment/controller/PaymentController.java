@@ -2,11 +2,10 @@ package com.mjyoo.limitedflashsale.payment.controller;
 
 import com.mjyoo.limitedflashsale.auth.security.UserDetailsImpl;
 import com.mjyoo.limitedflashsale.common.dto.ApiResponse;
-import com.mjyoo.limitedflashsale.payment.dto.PaymentRequestDto;
 import com.mjyoo.limitedflashsale.payment.dto.PaymentResponseDto;
+import com.mjyoo.limitedflashsale.payment.entity.PaymentStatus;
 import com.mjyoo.limitedflashsale.payment.service.PaymentService;
 import com.mjyoo.limitedflashsale.user.entity.User;
-import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
@@ -20,10 +19,11 @@ public class PaymentController {
 
     // 결제 처리
     @PostMapping("/process/{orderId}")
-    public ApiResponse<?> processPayment(@Valid @RequestBody PaymentRequestDto requestDto,
+    public ApiResponse<?> processPayment(@PathVariable Long orderId,
                                         @AuthenticationPrincipal UserDetailsImpl userDetails) {
         User user = userDetails.getUser();
-        PaymentResponseDto paymentResponseDto = paymentService.processPayment(requestDto, user);
-        return ApiResponse.success("결제가 완료되었습니다.", paymentResponseDto);
+        PaymentResponseDto response = paymentService.processPayment(orderId, user);
+        String message = (response.getStatus() == PaymentStatus.SUCCESS) ? "결제가 완료되었습니다." : "결제에 실패했습니다.";
+        return ApiResponse.success(message, response);
     }
 }

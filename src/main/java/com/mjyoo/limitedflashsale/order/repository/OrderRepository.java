@@ -5,23 +5,27 @@ import com.mjyoo.limitedflashsale.order.entity.OrderStatus;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Slice;
 import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
-import org.springframework.data.repository.query.Param;
+
+import java.time.LocalDateTime;
+import java.util.List;
 
 
 public interface OrderRepository extends JpaRepository<Order, Long> {
-    //주문 취소
-    @Modifying
-    @Query("update Order o set o.status = :status where o.id = :orderId")
-    void updateOrderStatusToCanceled(@Param("orderId") Long orderId, @Param("status") OrderStatus status);
 
-    @Query("SELECT o FROM Order o WHERE o.user.id = :id ORDER BY o.createdAt DESC")
+    @Query(value = "SELECT o FROM Order o JOIN FETCH o.orderProductList op WHERE o.user.id = :id ORDER BY o.id DESC",
+            countQuery = "SELECT COUNT(o) FROM Order o WHERE o.user.id = :id")
     Slice<Order> findByUserId(Long id, PageRequest pageRequest);
 
-    @Query("SELECT o FROM Order o WHERE o.user.id = :id AND o.id < :cursor ORDER BY o.createdAt DESC")
+    @Query(value = "SELECT o FROM Order o JOIN FETCH o.orderProductList op WHERE o.user.id = :id AND o.id < :cursor ORDER BY o.id DESC",
+            countQuery = "SELECT COUNT(o) FROM Order o WHERE o.user.id = :id")
     Slice<Order> findByUserIdAndIdLessThan(Long id, Long cursor, PageRequest pageRequest);
 
     @Query("SELECT count(o) FROM Order o WHERE o.user.id = :userId")
     Long countAllByUserId(Long userId);
+
+    @Query("SELECT o FROM Order o JOIN o.orderProductList op WHERE op.product.id = :productId")
+    List<Order> findAllByProductId(Long productId);
+
+    List<Order> findByStatusAndExpiryTimeBefore(OrderStatus status, LocalDateTime time);
 }

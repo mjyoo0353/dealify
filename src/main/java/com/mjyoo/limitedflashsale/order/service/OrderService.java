@@ -18,8 +18,6 @@ import com.mjyoo.limitedflashsale.order.dto.OrderResponseDto;
 import com.mjyoo.limitedflashsale.order.entity.Order;
 import com.mjyoo.limitedflashsale.order.entity.OrderProduct;
 import com.mjyoo.limitedflashsale.order.entity.OrderStatus;
-import com.mjyoo.limitedflashsale.payment.dto.PaymentRequestDto;
-import com.mjyoo.limitedflashsale.payment.dto.PaymentResponseDto;
 import com.mjyoo.limitedflashsale.payment.entity.PaymentStatus;
 import com.mjyoo.limitedflashsale.payment.service.PaymentService;
 import com.mjyoo.limitedflashsale.product.entity.Product;
@@ -35,7 +33,6 @@ import org.springframework.data.domain.Slice;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -113,6 +110,9 @@ public class OrderService {
             throw new CustomException(ErrorCode.OUT_OF_STOCK);
         }
 
+        // 재고 차감 처리 (DB 업데이트 + 레디스 캐시 업데이트)
+        inventoryService.decreaseStock(product.getId(), quantity);
+
         //해당 상품이 행사 상품인지 확인
         FlashSaleProduct flashSaleProduct = flashSaleProductRepository.findByProductId(product.getId())
                 .orElse(null);
@@ -160,6 +160,7 @@ public class OrderService {
         Order order = Order.builder()
                 .user(user)
                 .status(OrderStatus.ORDER_PROCESSING)
+                .expiryTime(LocalDateTime.now().plusMinutes(5)) // 5분 후 만료
                 .orderProductList(new ArrayList<>())
                 .build();
         orderRepository.save(order);
@@ -179,31 +180,11 @@ public class OrderService {
         order.getOrderProductList().add(orderProduct);
         orderProductRepository.save(orderProduct);
 
-        // 주문 TTL 설정 (5분)
-        String orderTimeoutKey = "order:timeout:" + order.getId();
+        // 레디스 주문 정보 저장 및 만료 TTL 설정 (5분)
+        String orderTimeoutKey = "temp_order:" + order.getId();
         redisTemplate.opsForValue().set(orderTimeoutKey, order.getId(), 5, TimeUnit.MINUTES);
 
-        try {
-            // 재고 차감 처리 (DB 업데이트 + 레디스 캐시 업데이트)
-            inventoryService.decreaseStock(product.getId(), quantity);
-
-            //결제 시도
-            PaymentRequestDto paymentRequestDto = PaymentRequestDto.builder()
-                    .orderId(order.getId())
-                    .totalAmount(totalPriceToApply)
-                    .build();
-
-            PaymentResponseDto paymentResult = paymentService.processPayment(paymentRequestDto, user);
-
-            //결제 실패시 재고 복구
-            if (paymentResult.getStatus().equals(OrderStatus.PAYMENT_FAILED.name())) {
-                inventoryService.restoreStock(order);
-            }
-            return order.getId();
-        } catch (Exception e) {
-            // 결제 도중 이탈 시에는 TTL로 처리되도록 함 (5분 뒤 재고 복구)
-            throw e;
-        }
+        return order.getId();
     }
 
     //주문 생성 (장바구니 상품)
@@ -268,9 +249,6 @@ public class OrderService {
         orderProductRepository.saveAll(orderProductList);
         cartRepository.save(cart);
 
-        //결제 처리
-        processPayment(user, order, order.getTotalAmount());
-
         return order.getId();
     }
 
@@ -287,7 +265,7 @@ public class OrderService {
         // 주문 취소 권한 확인
         ValidateOrderUser(user, order);
         // 주문 상태 변경
-        order.setStatus(OrderStatus.CANCELED);
+        order.updateStatus(OrderStatus.CANCELED);
         // 결제 상태 변경
         order.getPayment().setStatus(PaymentStatus.CANCELED);
 
@@ -298,14 +276,6 @@ public class OrderService {
             product.getInventory().restoreStock(orderProduct.getQuantity());
         }
         orderRepository.save(order);
-    }
-
-    private void processPayment(User user, Order order, BigDecimal totalPriceToApply) {
-        PaymentRequestDto paymentRequestDto = PaymentRequestDto.builder()
-                .orderId(order.getId())
-                .totalAmount(totalPriceToApply)
-                .build();
-        paymentService.processPayment(paymentRequestDto, user);
     }
 
     public Product getProduct(Long productId) {
