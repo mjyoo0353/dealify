@@ -12,7 +12,7 @@ import java.util.stream.Collectors;
 @AllArgsConstructor
 @NoArgsConstructor
 public class FlashSaleResponseDto {
-    private Long eventId;
+    private Long flashSaleId;
     private String name;
     private LocalDateTime startTime;
     private LocalDateTime endTime;
@@ -20,7 +20,7 @@ public class FlashSaleResponseDto {
     private List<FlashSaleProductResponseDto> flashSaleProductList;
 
     public FlashSaleResponseDto(FlashSale flashSale) {
-        this.eventId = flashSale.getId();
+        this.flashSaleId = flashSale.getId();
         this.name = flashSale.getName();
         this.startTime = flashSale.getStartTime();
         this.endTime = flashSale.getEndTime();

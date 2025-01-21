@@ -1,6 +1,6 @@
 package com.mjyoo.limitedflashsale.flashsale.entity;
 
-import com.mjyoo.limitedflashsale.common.Timestamped;
+import com.mjyoo.limitedflashsale.common.entity.Timestamped;
 import com.mjyoo.limitedflashsale.product.entity.Product;
 import jakarta.persistence.*;
 import lombok.*;
@@ -49,12 +49,6 @@ public class FlashSaleProduct extends Timestamped {
         this.flashSale = flashSale;
         this.product = product;
     }
-
-    public void updateDiscountRate(BigDecimal discountRate) {
-        this.discountRate = discountRate;
-        this.discountedPrice = this.originalPrice.subtract(this.originalPrice.multiply(discountRate));
-    }
-
 
     public void setStatus(FlashSaleProductStatus status) {
         this.status = status;
