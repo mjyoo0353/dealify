@@ -40,7 +40,7 @@ public class FlashSaleController {
     // 행사 생성
     @PostMapping("/flash-sale")
     public ResponseEntity<ApiResponse<?>> createFlashSale(@Valid @RequestBody FlashSaleRequestDto requestDto,
-                                                      @AuthenticationPrincipal UserDetailsImpl userDetails) {
+                                                          @AuthenticationPrincipal UserDetailsImpl userDetails) {
         User user = userDetails.getUser();
         Long eventId = flashSaleService.createFlashSale(requestDto, user);
         return ResponseEntity.ok(ApiResponse.success("행사가 생성되었습니다.", eventId));
@@ -49,11 +49,20 @@ public class FlashSaleController {
     // 행사 수정
     @PutMapping("/flash-sale/{eventId}")
     public ResponseEntity<ApiResponse<?>> updateFlashSale(@PathVariable Long eventId,
-                                                      @Valid @RequestBody FlashSaleUpdateRequestDto requestDto,
-                                                      @AuthenticationPrincipal UserDetailsImpl userDetails) {
+                                                          @Valid @RequestBody FlashSaleUpdateRequestDto requestDto,
+                                                          @AuthenticationPrincipal UserDetailsImpl userDetails) {
         User user = userDetails.getUser();
         FlashSaleResponseDto flashSaleResponseDto = flashSaleService.updateFlashSale(eventId, requestDto, user);
         return ResponseEntity.ok(ApiResponse.success("행사가 수정되었습니다.", flashSaleResponseDto));
+    }
+
+    // 행사 삭제
+    @DeleteMapping("/flash-sale/{eventId}")
+    public ResponseEntity<ApiResponse<?>> deleteFlashSale(@PathVariable Long eventId,
+                                                          @AuthenticationPrincipal UserDetailsImpl userDetails) {
+        User user = userDetails.getUser();
+        flashSaleService.deleteFlashSale(eventId, user);
+        return ResponseEntity.ok(ApiResponse.success("행사가 삭제되었습니다."));
     }
 
     // 행사 오픈
@@ -67,8 +76,8 @@ public class FlashSaleController {
 
     // 행사 종료
     @PutMapping("/flash-sale/close/{eventId}")
-    public ResponseEntity<ApiResponse<?>> deleteFlashSale(@PathVariable Long eventId,
-                                                      @AuthenticationPrincipal UserDetailsImpl userDetails) {
+    public ResponseEntity<ApiResponse<?>> closeFlashSale(@PathVariable Long eventId,
+                                                          @AuthenticationPrincipal UserDetailsImpl userDetails) {
         User user = userDetails.getUser();
         flashSaleService.closeFlashSale(eventId, user);
         return ResponseEntity.ok(ApiResponse.success("행사가 종료되었습니다."));

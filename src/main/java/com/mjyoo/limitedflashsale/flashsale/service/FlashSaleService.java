@@ -36,7 +36,7 @@ public class FlashSaleService {
 
     //행사 조회
     public FlashSaleResponseDto getFlashSaleDetail(Long eventId) {
-        FlashSale flashSale = getFlashSale(eventId);
+        FlashSale flashSale = findFlashSale(eventId);
         return new FlashSaleResponseDto(flashSale);
     }
 
@@ -58,7 +58,7 @@ public class FlashSaleService {
         // 관리자 권한 확인
         checkAdminRole(user);
         // 상품 조회
-        Product product = getProduct(requestDto);
+        Product product = findProduct(requestDto.getProductId());
         // 행사 생성 및 저장
         FlashSale flashSale = FlashSale.builder()
                 .name(requestDto.getName())
@@ -90,7 +90,7 @@ public class FlashSaleService {
     @Transactional
     public FlashSaleResponseDto updateFlashSale(Long eventId, FlashSaleUpdateRequestDto requestDto, User user) {
         checkAdminRole(user); // 관리자 권한 확인
-        FlashSale flashSale = getFlashSale(eventId); // 행사 조회
+        FlashSale flashSale = findFlashSale(eventId); // 행사 조회
         // 행사 종료 시 수정 불가
         if(flashSale.getStatus().equals(FlashSaleStatus.ENDED)) {
             throw new CustomException(ErrorCode.INVALID_UPDATE_FLASH_SALE);
@@ -109,15 +109,29 @@ public class FlashSaleService {
         return new FlashSaleResponseDto(flashSale);
     }
 
+    //행사 삭제
+    @Transactional
+    public void deleteFlashSale(Long eventId, User user) {
+        // 관리자 권한 확인
+        checkAdminRole(user);
+        // 행사 조회
+        FlashSale flashSale = findFlashSale(eventId);
+        // 행사 진행중 또는 종료 시 삭제 불가
+        if(flashSale.getStatus().equals(FlashSaleStatus.ENDED) || flashSale.getStatus().equals(FlashSaleStatus.ONGOING)) {
+            throw new CustomException(ErrorCode.INVALID_DELETE_FLASH_SALE);
+        }
+        flashSaleRepository.delete(flashSale);
+    }
+
     //행사 시작
     @Transactional
     public void openFlashSale(Long eventId, User user) {
         // 관리자 권한 확인
         checkAdminRole(user);
         // 행사 상품 조회
-        FlashSaleProduct flashSaleProduct = getFlashSaleProduct(eventId);
-        //Active로 상태 변경
-        flashSaleProduct.getFlashSale().setStatus(FlashSaleStatus.ACTIVE);
+        FlashSaleProduct flashSaleProduct = findFlashSaleProduct(eventId);
+        //ONGOING 상태 변경
+        flashSaleProduct.getFlashSale().setStatus(FlashSaleStatus.ONGOING);
         flashSaleProductRepository.save(flashSaleProduct);
     }
 
@@ -127,23 +141,25 @@ public class FlashSaleService {
         // 관리자 권한 확인
         checkAdminRole(user);
         // 행사 상품 조회
-        FlashSaleProduct flashSaleProduct = getFlashSaleProduct(eventId);
+        FlashSaleProduct flashSaleProduct = findFlashSaleProduct(eventId);
         // Ended로 상태 변경
         flashSaleProduct.getFlashSale().setStatus(FlashSaleStatus.ENDED);
         flashSaleProductRepository.save(flashSaleProduct);
     }
 
-    public FlashSale getFlashSale(Long eventId) {
+    /// -------------------------------------------- private method -------------------------------------------- ///
+
+    public FlashSale findFlashSale(Long eventId) {
         return flashSaleRepository.findById(eventId)
                 .orElseThrow(() -> new CustomException(ErrorCode.FLASH_SALE_NOT_FOUND));
     }
 
-    private Product getProduct(FlashSaleRequestDto requestDto) {
-        return productRepository.findById(requestDto.getProductId())
+    private Product findProduct(Long productId) {
+        return productRepository.findById(productId)
                 .orElseThrow(() -> new CustomException(ErrorCode.PRODUCT_NOT_FOUND));
     }
 
-    private FlashSaleProduct getFlashSaleProduct(Long eventId) {
+    private FlashSaleProduct findFlashSaleProduct(Long eventId) {
         return flashSaleProductRepository.findById(eventId)
                 .orElseThrow(() -> new CustomException(ErrorCode.PRODUCT_NOT_FOUND));
     }
