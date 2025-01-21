@@ -16,6 +16,7 @@ import java.util.List;
 @Entity
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
+//@Table(indexes = {@Index(name = "idx_product_deleted_id", columnList = "isDeleted,id")})
 public class Product extends Timestamped {
 
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -28,12 +29,9 @@ public class Product extends Timestamped {
     private BigDecimal price; //상품 가격
 
     @Column(nullable = false)
-    private boolean isFlashSale = false;
-
-    @Column(nullable = false)
     private boolean isDeleted = false;
 
-    @OneToOne(mappedBy = "product", fetch = FetchType.EAGER, cascade = CascadeType.ALL)
+    @OneToOne(mappedBy = "product", cascade = CascadeType.ALL)
     private Inventory inventory;
 
     @OneToMany(mappedBy = "product")

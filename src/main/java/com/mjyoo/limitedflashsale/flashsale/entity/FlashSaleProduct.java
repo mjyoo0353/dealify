@@ -32,7 +32,7 @@ public class FlashSaleProduct extends Timestamped {
     private FlashSaleProductStatus status; // 행사 상품 상태
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "event_id", nullable = false)
+    @JoinColumn(name = "flash_sale_id", nullable = false)
     private FlashSale flashSale;
 
     @ManyToOne(fetch = FetchType.LAZY)

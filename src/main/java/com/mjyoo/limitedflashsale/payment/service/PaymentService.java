@@ -99,8 +99,7 @@ public class PaymentService {
 
     private boolean simulatePayment() {
         // 20% 확률로 결제 실패 시뮬레이션
-        //return Math.random() >= 0.2;
-        return false;
+        return Math.random() >= 0.2;
     }
 
 }

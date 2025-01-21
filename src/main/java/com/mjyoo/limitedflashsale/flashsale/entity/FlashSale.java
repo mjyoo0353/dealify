@@ -31,7 +31,7 @@ public class FlashSale extends Timestamped {
     @Enumerated(EnumType.STRING)
     private FlashSaleStatus status;
 
-    @OneToMany(mappedBy = "flashSale")
+    @OneToMany(mappedBy = "flashSale", cascade = CascadeType.ALL)
     private List<FlashSaleProduct> flashSaleProductList = new ArrayList<>();
 
     @Builder
