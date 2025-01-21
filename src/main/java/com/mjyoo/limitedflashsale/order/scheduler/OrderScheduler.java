@@ -1,15 +1,15 @@
-package com.mjyoo.limitedflashsale.order;
+package com.mjyoo.limitedflashsale.order.scheduler;
 
 import com.mjyoo.limitedflashsale.order.entity.Order;
 import com.mjyoo.limitedflashsale.order.entity.OrderStatus;
 import com.mjyoo.limitedflashsale.order.repository.OrderRepository;
+import com.mjyoo.limitedflashsale.order.service.OrderService;
 import com.mjyoo.limitedflashsale.product.service.InventoryService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
-import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -19,7 +19,7 @@ import java.util.List;
 public class OrderScheduler {
 
     private final OrderRepository orderRepository;
-    private final InventoryService inventoryService;
+    private final OrderService orderService;
     private final RedisTemplate<String, Object> redisTemplate;
 
     /**
@@ -27,22 +27,13 @@ public class OrderScheduler {
      * 실행 주기: 1분마다
      */
     @Scheduled(cron = "${scheduler.order.sync-time}")
-    @Transactional
     public void processExpiredOrders() {
         log.info("Starting to process expired orders...");
         // 만료된 주문 조회
         List<Order> expiredOrders = orderRepository.findByStatusAndExpiryTimeBefore(OrderStatus.ORDER_PROCESSING, LocalDateTime.now());
         for (Order order : expiredOrders) {
             try {
-                // DB 주문 취소 처리
-                order.updateStatus(OrderStatus.TIMEOUT);
-                orderRepository.save(order);
-                // Redis 주문 정보 삭제
-                redisTemplate.delete("temp_order:" + order.getId());
-
-                // 재고 복원
-                inventoryService.restoreStock(order);
-
+                orderService.processSingleOrder(order);
                 log.info("Expired order processed - orderId: {}", order.getId());
             } catch (Exception e) {
                 log.error("Error processing expired order - orderId: {}", order.getId(), e);

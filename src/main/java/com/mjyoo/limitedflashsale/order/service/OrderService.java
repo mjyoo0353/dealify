@@ -4,6 +4,7 @@ import com.mjyoo.limitedflashsale.cart.dto.CartRequestDto;
 import com.mjyoo.limitedflashsale.cart.entity.Cart;
 import com.mjyoo.limitedflashsale.cart.entity.CartProduct;
 import com.mjyoo.limitedflashsale.cart.repository.CartRepository;
+import com.mjyoo.limitedflashsale.common.util.RedisKeys;
 import com.mjyoo.limitedflashsale.common.exception.CustomException;
 import com.mjyoo.limitedflashsale.common.exception.ErrorCode;
 import com.mjyoo.limitedflashsale.flashsale.entity.FlashSale;
@@ -256,7 +257,7 @@ public class OrderService {
 
     // 레디스 주문 정보 저장 및 만료 TTL 설정 (5분)
     private void cacheTemporaryOrder(Order order) {
-        String orderTimeoutKey = "temp_order:" + order.getId();
+        String orderTimeoutKey = RedisKeys.getTempOrderKey(order.getId());
         redisTemplate.opsForValue().set(orderTimeoutKey, order.getId(), 5, TimeUnit.MINUTES);
     }
 
@@ -330,4 +331,15 @@ public class OrderService {
         return null;
     }
 
+    // OrderScheduler 클래스 만료된 주문 처리 메서드
+    @Transactional
+    public void processSingleOrder(Order order) {
+        // DB 주문 취소 처리
+        order.updateStatus(OrderStatus.TIMEOUT);
+        orderRepository.save(order);
+        // Redis 주문 정보 삭제
+        redisTemplate.delete(RedisKeys.getTempOrderKey(order.getId()));
+        // 재고 복원
+        inventoryService.restoreStock(order);
+    }
 }
