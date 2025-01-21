@@ -1,5 +1,6 @@
 package com.mjyoo.limitedflashsale.product.service;
 
+import com.mjyoo.limitedflashsale.common.util.RedisKeys;
 import com.mjyoo.limitedflashsale.common.exception.CustomException;
 import com.mjyoo.limitedflashsale.common.exception.ErrorCode;
 import com.mjyoo.limitedflashsale.product.dto.ProductRequestDto;
@@ -32,12 +33,11 @@ public class ProductService {
     private final RedisTemplate<String, Object> redisTemplate;
     private final InventoryService inventoryService;
     private static final BigDecimal MIN_PRICE = new BigDecimal("1");
-    private static final String PRODUCT_CACHE_KEY = "product:";
 
     // 단일 상품 조회 (삭제되지 않은 데이터)
     public ProductResponseDto getProduct(Long productId) {
         // 상품 정보 조회
-        String key = PRODUCT_CACHE_KEY + productId;
+        String key = RedisKeys.getProductCacheKey(productId);
         ProductResponseDto cachedProduct = (ProductResponseDto) redisTemplate.opsForValue().get(key);
 
         if (cachedProduct != null) {
@@ -128,7 +128,7 @@ public class ProductService {
         product.getInventory().updateStock(stock, product);
 
         try{
-            String productKey = PRODUCT_CACHE_KEY + productId;
+            String productKey = RedisKeys.getProductCacheKey(productId);
             // 상품 정보 캐시 무효화 (삭제)
             redisTemplate.delete(productKey);
 

@@ -4,6 +4,7 @@ import com.mjyoo.limitedflashsale.auth.dto.LoginRequestDto;
 import com.mjyoo.limitedflashsale.auth.dto.LoginResponseDto;
 import com.mjyoo.limitedflashsale.auth.dto.RefreshTokenRequestDto;
 import com.mjyoo.limitedflashsale.auth.security.JwtUtil;
+import com.mjyoo.limitedflashsale.common.util.RedisKeys;
 import com.mjyoo.limitedflashsale.common.exception.CustomException;
 import com.mjyoo.limitedflashsale.common.exception.ErrorCode;
 import com.mjyoo.limitedflashsale.common.exception.TokenCreationException;
@@ -73,7 +74,7 @@ public class AuthService {
         }
 
         // Redis에 저장된 Refresh Token이 있는지 확인
-        String redisKey = "refresh_token:" + refreshToken;
+        String redisKey = RedisKeys.getRefreshToken(refreshToken);
         redisTemplate.opsForValue().get(redisKey);
 
         // JWT에서 사용자 정보 추출

@@ -1,5 +1,6 @@
 package com.mjyoo.limitedflashsale.auth.service;
 
+import com.mjyoo.limitedflashsale.common.util.RedisKeys;
 import com.mjyoo.limitedflashsale.common.exception.CustomException;
 import com.mjyoo.limitedflashsale.common.exception.ErrorCode;
 import com.mjyoo.limitedflashsale.user.entity.User;
@@ -31,9 +32,6 @@ public class EmailVerificationService {
     private final UserRepository userRepository;
     private final RedisTemplate<String, String> redisTemplate;
 
-    private static final String SIGNUP_CODE_PREFIX = "signup_code:";
-    private static final String SIGNUP_CODE_CHECK = ":_verified";
-
     @Value("${MAIL_USERNAME}")
     private String mailUsername;
 
@@ -50,7 +48,7 @@ public class EmailVerificationService {
             throw new IllegalArgumentException("Failed to send email to " + email, e);
         }
         // 이메일과 인증 코드를 Redis에 저장
-        String key = SIGNUP_CODE_PREFIX + email;
+        String key = RedisKeys.getSignupCode(email);
         redisTemplate.opsForValue().set(key, code, 5, TimeUnit.MINUTES);
         log.info("Verification code: {}", code);
     }
@@ -81,7 +79,7 @@ public class EmailVerificationService {
     //이메일 인증 처리
     public boolean verifyEmail(String email, String code) {
         // Redis에서 email Key에 해당하는 value를 가져옴
-        String key = SIGNUP_CODE_PREFIX + email;
+        String key = RedisKeys.getSignupCode(email);
         String redisCode = redisTemplate.opsForValue().get(key);
 
         // 로그 추가: Redis에 저장된 코드와 비교하려는 코드 출력
@@ -90,7 +88,7 @@ public class EmailVerificationService {
         // Redis에 저장된 인증 코드와 사용자가 입력한 인증 코드가 일치하는지 확인
         if(redisCode != null && redisCode.equals(code)) {
             // 5분 후에 만료되도록 설정
-            redisTemplate.opsForValue().set(key + SIGNUP_CODE_CHECK, code, 5, TimeUnit.MINUTES);
+            redisTemplate.opsForValue().set(RedisKeys.getSignupCodeCheck(email), code, 5, TimeUnit.MINUTES);
             log.info("Email verification successful for: {}", email);
             return true;
         }
@@ -99,7 +97,7 @@ public class EmailVerificationService {
     }
 
     public boolean isEmailVerified(String email) {
-        String key = SIGNUP_CODE_PREFIX + email + SIGNUP_CODE_CHECK;
+        String key = RedisKeys.getSignupCodeCheck(email);
         String code = redisTemplate.opsForValue().get(key);
         return code != null;
     }

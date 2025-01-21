@@ -1,0 +1,34 @@
+package com.mjyoo.limitedflashsale.common.util;
+
+public class RedisKeys {
+    private static final String TEMP_ORDER_CACHE_KEY = "temp_order:";
+    private static final String INVENTORY_CACHE_KEY = "inventory:";
+    private static final String PRODUCT_CACHE_KEY = "product:";
+    private static final String REFRESH_TOKEN = "refresh_token:";
+    private static final String SIGNUP_CODE = "signup_code:";
+    private static final String SIGNUP_CODE_CHECK = ":verified";
+
+    public static String getTempOrderKey(Long orderId) {
+        return TEMP_ORDER_CACHE_KEY + orderId;
+    }
+
+    public static String getInventoryCacheKey(Long productId) {
+        return INVENTORY_CACHE_KEY + productId;
+    }
+
+    public static String getProductCacheKey(Long productId) {
+        return PRODUCT_CACHE_KEY + productId;
+    }
+
+    public static String getRefreshToken(String token) {
+        return REFRESH_TOKEN + token;
+    }
+
+    public static String getSignupCode(String email) {
+        return SIGNUP_CODE + email;
+    }
+
+    public static String getSignupCodeCheck(String email) {
+        return SIGNUP_CODE + email + SIGNUP_CODE_CHECK;
+    }
+}
