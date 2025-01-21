@@ -39,4 +39,8 @@ public class CartProduct extends Timestamped {
     public void updateQuantity(int quantity) {
         this.quantity += quantity;
     }
+
+    public void setQuantity(int quantity) {
+        this.quantity = quantity;
+    }
 }

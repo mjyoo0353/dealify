@@ -94,9 +94,27 @@ public class CartService {
         return new CartProductResponseDto(cartProduct);
     }
 
-    // TODO: 장바구니 상품 수량 업데이트
-    public void updateCart(CartRequestDto requestDto, User user) {
+    // 장바구니 상품 수량 업데이트
+    @Transactional
+    public void updateCart(Long productId, int quantity, User user) {
+        // 유저 장바구니 조회
+        Cart cart = cartRepository.findByUserId(user.getId())
+                .orElseThrow(() -> new CustomException(ErrorCode.CART_NOT_FOUND));
 
+        // 상품 조회
+        Product product = getValidProduct(productId);
+
+        // 장바구니 상품 조회
+        CartProduct cartProduct = cartProductRepository.findByCartAndProduct(cart, product)
+                .orElseThrow(() -> new CustomException(ErrorCode.CART_PRODUCT_NOT_FOUND));
+
+        // 수량/재고 유효한지 확인
+        if (quantity <= 0 || quantity > product.getInventory().getStock()) {
+            throw new CustomException(ErrorCode.INVALID_QUANTITY);
+        }
+
+        // 장바구니 상품 수량 업데이트
+        cartProduct.setQuantity(quantity);
     }
 
     // 장바구니에서 상품 삭제
