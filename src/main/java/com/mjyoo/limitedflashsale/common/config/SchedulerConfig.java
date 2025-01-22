@@ -12,4 +12,10 @@ public class SchedulerConfig {
 
     @Value("${scheduler.order.sync-time}")
     private String orderSyncTime;
+
+    @Value("${scheduler.flash-sale.open-time}")
+    private String flashSaleOpenTime;
+
+    @Value("${scheduler.flash-sale.close-time}")
+    private String flashSaleCloseTime;
 }

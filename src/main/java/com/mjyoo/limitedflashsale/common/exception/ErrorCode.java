@@ -25,6 +25,9 @@ public enum ErrorCode {
     // Order
     ORDER_NOT_FOUND("해당 주문 정보를 찾을 수 없습니다."),
     OUT_OF_STOCK("재고가 부족합니다."),
+    LOCK_ACQUISITION_FAILURE("재고 업데이트 락 획득 실패"),
+    INVALID_ORDER_STATUS("주문 상태가 유효하지 않습니다."),
+    ORDER_EXPIRED("주문이 만료되었습니다."),
 
     // Cart
     CART_NOT_FOUND("해당 장바구니 정보를 찾을 수 없습니다."),
@@ -34,8 +37,12 @@ public enum ErrorCode {
     // FlashSale
     FLASH_SALE_NOT_FOUND("해당 이벤트 정보를 찾을 수 없습니다."),
     FLASH_SALE_NOT_STARTED("행사 시작 시간이 아닙니다."),
-    FLASH_SALE_NOT_ACTIVE("현재 행사가 진행 중이 아닙니다."),
+    FLASH_SALE_NOT_ENDED("행사 종료 시간이 아닙니다."),
+    FLASH_SALE_NOT_ONGOING("현재 행사가 진행 중이 아닙니다."),
     INVALID_UPDATE_FLASH_SALE("종료된 행사는 수정이 불가합니다."),
+    INVALID_DELETE_FLASH_SALE("진행 중이거나 종료된 행사는 삭제가 불가합니다."),
+    FLASH_SALE_NOT_SCHEDULED("예정된 행사가 없습니다."),
+    PRODUCT_ALREADY_EXISTS("이미 등록된 상품입니다."),
 
     // Payment
     PAYMENT_FAILED("결제에 실패하였습니다."),

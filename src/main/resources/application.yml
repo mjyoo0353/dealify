@@ -43,7 +43,10 @@ management:
 
 scheduler:
   order:
-    sync-time: "1 * * * * *" # 매 분 1초에 실행
+    sync-time: "0 1 * * * *" # 매 시간 1분에 실행
+  flash-sale:
+    open-time: "0 0 14 * * *" # 매일 오후 2시에 실행
+    close-time: "0 0 15 * * *" # 매일 오후 3시에 실행
 
 logging:
   level:

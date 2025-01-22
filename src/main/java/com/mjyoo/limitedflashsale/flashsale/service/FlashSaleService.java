@@ -17,7 +17,6 @@ import com.mjyoo.limitedflashsale.user.entity.UserRoleEnum;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -78,7 +77,7 @@ public class FlashSaleService {
         // 행사 상품 생성 및 저장
         FlashSale flashSale = findFlashSale(flashSaleId);
         // 행사 시작 전에만 상품 추가 가능
-        if(flashSale.getStatus() != FlashSaleStatus.SCHEDULED) {
+        if (flashSale.getStatus() != FlashSaleStatus.SCHEDULED) {
             throw new CustomException(ErrorCode.FLASH_SALE_NOT_SCHEDULED);
         }
         // 상품 조회
@@ -116,6 +115,7 @@ public class FlashSaleService {
     public FlashSaleResponseDto updateFlashSale(Long flashSaleId, FlashSaleRequestDto requestDto, User user) {
         checkAdminRole(user); // 관리자 권한 확인
         FlashSale flashSale = findFlashSale(flashSaleId); // 행사 조회
+
         // 행사 종료 시 수정 불가
         if (flashSale.getStatus().equals(FlashSaleStatus.ENDED)) {
             throw new CustomException(ErrorCode.INVALID_UPDATE_FLASH_SALE);
@@ -150,6 +150,7 @@ public class FlashSaleService {
     public void openFlashSale(Long flashSaleId, User user) {
         // 관리자 권한 확인
         checkAdminRole(user);
+        // DB 행사 상태 변경
         updateFlashSaleStatus(flashSaleId, FlashSaleStatus.ONGOING);
         log.info("Flash sale manually opened by admin: {}", flashSaleId);
     }
@@ -159,10 +160,14 @@ public class FlashSaleService {
     public void closeFlashSale(Long flashSaleId, User user) {
         // 관리자 권한 확인
         checkAdminRole(user);
+        // DB 행사 상태 변경
         updateFlashSaleStatus(flashSaleId, FlashSaleStatus.ENDED);
         log.info("Flash sale manually closed by admin: {}", flashSaleId);
     }
 
+    /// -------------------------------------------- private method -------------------------------------------- ///
+
+    // DB 행사 상태 업데이트
     private void updateFlashSaleStatus(Long flashSaleId, FlashSaleStatus status) {
         // 행사 상품 조회
         FlashSale flashSale = findFlashSale(flashSaleId);
@@ -171,7 +176,7 @@ public class FlashSaleService {
         flashSaleRepository.save(flashSale);
     }
 
-    public FlashSale findFlashSale(Long flashSaleId) {
+    private FlashSale findFlashSale(Long flashSaleId) {
         return flashSaleRepository.findById(flashSaleId)
                 .orElseThrow(() -> new CustomException(ErrorCode.FLASH_SALE_NOT_FOUND));
     }
