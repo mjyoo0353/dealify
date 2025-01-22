@@ -3,11 +3,10 @@ package com.mjyoo.limitedflashsale.product.entity;
 import com.mjyoo.limitedflashsale.cart.entity.CartProduct;
 import com.mjyoo.limitedflashsale.flashsale.entity.FlashSaleProduct;
 import com.mjyoo.limitedflashsale.product.dto.ProductRequestDto;
-import com.mjyoo.limitedflashsale.common.Timestamped;
+import com.mjyoo.limitedflashsale.common.entity.Timestamped;
 import com.mjyoo.limitedflashsale.order.entity.OrderProduct;
 import jakarta.persistence.*;
 import lombok.*;
-import org.hibernate.annotations.SQLDelete;
 
 import java.math.BigDecimal;
 import java.util.ArrayList;
@@ -16,7 +15,6 @@ import java.util.List;
 @Entity
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-//@Table(indexes = {@Index(name = "idx_product_deleted_id", columnList = "isDeleted,id")})
 public class Product extends Timestamped {
 
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)

@@ -1,7 +1,7 @@
 package com.mjyoo.limitedflashsale.order.entity;
 
 import com.mjyoo.limitedflashsale.payment.entity.Payment;
-import com.mjyoo.limitedflashsale.common.Timestamped;
+import com.mjyoo.limitedflashsale.common.entity.Timestamped;
 import com.mjyoo.limitedflashsale.user.entity.User;
 import jakarta.persistence.*;
 import lombok.*;

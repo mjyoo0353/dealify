@@ -4,10 +4,8 @@ import com.mjyoo.limitedflashsale.order.entity.Order;
 import com.mjyoo.limitedflashsale.order.entity.OrderStatus;
 import com.mjyoo.limitedflashsale.order.repository.OrderRepository;
 import com.mjyoo.limitedflashsale.order.service.OrderService;
-import com.mjyoo.limitedflashsale.product.service.InventoryService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 import java.time.LocalDateTime;
@@ -20,7 +18,6 @@ public class OrderScheduler {
 
     private final OrderRepository orderRepository;
     private final OrderService orderService;
-    private final RedisTemplate<String, Object> redisTemplate;
 
     /**
      * 만료된 주문 처리 스케줄러

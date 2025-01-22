@@ -1,6 +1,6 @@
 package com.mjyoo.limitedflashsale.product.entity;
 
-import com.mjyoo.limitedflashsale.common.Timestamped;
+import com.mjyoo.limitedflashsale.common.entity.Timestamped;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Getter;

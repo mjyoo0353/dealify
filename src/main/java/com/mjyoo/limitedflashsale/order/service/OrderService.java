@@ -92,7 +92,7 @@ public class OrderService {
         validateAndDecreaseStock(product, quantity);
 
         BigDecimal priceToApply;
-        boolean isEventProduct = false;
+        boolean isFlashSaleProduct = false;
 
         //해당 상품이 행사 상품인지 확인
         BigDecimal flashSalePrice = processFlashSaleProduct(product);
@@ -100,7 +100,7 @@ public class OrderService {
         //행사상품이면 할인된 가격 적용
         if (flashSalePrice != null) {
             priceToApply = flashSalePrice;
-            isEventProduct = true;
+            isFlashSaleProduct = true;
         } else {
             //행사 상품이 아닌 경우 일반 가격 적용
             priceToApply = product.getPrice();
@@ -109,7 +109,7 @@ public class OrderService {
         //주문 생성
         Order order = createOrderEntity(user);
         //주문 상품 생성
-        OrderProduct orderProduct = createOrderProductEntity(order, product, priceToApply, quantity, isEventProduct);
+        OrderProduct orderProduct = createOrderProductEntity(order, product, priceToApply, quantity, isFlashSaleProduct);
         // 주문 상품 리스트에 단일 상품 추가
         order.getOrderProductList().add(orderProduct);
         orderProductRepository.save(orderProduct);
@@ -149,7 +149,7 @@ public class OrderService {
             validateAndDecreaseStock(product, quantity);
 
             BigDecimal priceToApply;
-            boolean isEventProduct = false;
+            boolean isFlashSaleProduct = false;
 
             //해당 상품이 행사 상품인지 확인
             BigDecimal flashSalePrice = processFlashSaleProduct(product);
@@ -157,14 +157,14 @@ public class OrderService {
             //행사 상품인 경우 할인된 가격 적용
             if (flashSalePrice != null) {
                 priceToApply = flashSalePrice;
-                isEventProduct = true;
+                isFlashSaleProduct = true;
             } else {
                 //행사 상품이 아닌 경우 일반 가격 적용
                 priceToApply = product.getPrice();
             }
 
             //주문 상품 생성
-            OrderProduct orderProduct = createOrderProductEntity(order, product, priceToApply, quantity, isEventProduct);
+            OrderProduct orderProduct = createOrderProductEntity(order, product, priceToApply, quantity, isFlashSaleProduct);
             //주문 상품 리스트에 추가
             orderProductList.add(orderProduct);
             //장바구니에서 주문한 상품만 제거
@@ -284,7 +284,7 @@ public class OrderService {
     }
 
     //주문 상품 Entity 생성
-    private OrderProduct createOrderProductEntity(Order order, Product product, BigDecimal price, int quantity, boolean isEventProduct) {
+    private OrderProduct createOrderProductEntity(Order order, Product product, BigDecimal price, int quantity, boolean isFlashSaleProduct) {
         return OrderProduct.builder()
                 .order(order)
                 .product(product)
@@ -292,14 +292,14 @@ public class OrderService {
                 .price(price)
                 .quantity(quantity)
                 .totalAmount(price.multiply(BigDecimal.valueOf(quantity)))
-                .isEventProduct(isEventProduct)
+                .isFlashSaleProduct(isFlashSaleProduct)
                 .build();
     }
 
     //행사 상품 처리
     private BigDecimal processFlashSaleProduct(Product product) {
         //해당 상품이 행사 상품인지 확인
-        FlashSaleProduct flashSaleProduct = flashSaleProductRepository.findByProductId(product.getId())
+        FlashSaleProduct flashSaleProduct = flashSaleProductRepository.findByProductIdAndFlashSaleStatus(product.getId())
                 .orElse(null);
 
         //행사 상품인 경우
@@ -323,7 +323,7 @@ public class OrderService {
                 flashSaleProduct.setStatus(FlashSaleProductStatus.OUT_OF_STOCK);
                 flashSaleProductRepository.save(flashSaleProduct);
 
-                flashSale.setStatus(FlashSaleStatus.ENDED);
+                flashSale.updateStatus(FlashSaleStatus.ENDED);
                 flashSaleRepository.save(flashSale);
             }
             return flashSaleProduct.getDiscountedPrice();

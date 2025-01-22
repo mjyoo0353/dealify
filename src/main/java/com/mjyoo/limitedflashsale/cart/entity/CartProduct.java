@@ -1,7 +1,7 @@
 package com.mjyoo.limitedflashsale.cart.entity;
 
 import com.mjyoo.limitedflashsale.product.entity.Product;
-import com.mjyoo.limitedflashsale.common.Timestamped;
+import com.mjyoo.limitedflashsale.common.entity.Timestamped;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;

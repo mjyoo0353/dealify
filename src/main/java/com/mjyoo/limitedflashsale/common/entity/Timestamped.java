@@ -1,4 +1,4 @@
-package com.mjyoo.limitedflashsale.common;
+package com.mjyoo.limitedflashsale.common.entity;
 
 import jakarta.persistence.*;
 import lombok.Getter;

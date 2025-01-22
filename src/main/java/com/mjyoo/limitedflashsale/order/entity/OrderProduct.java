@@ -1,7 +1,7 @@
 package com.mjyoo.limitedflashsale.order.entity;
 
 import com.mjyoo.limitedflashsale.product.entity.Product;
-import com.mjyoo.limitedflashsale.common.Timestamped;
+import com.mjyoo.limitedflashsale.common.entity.Timestamped;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -28,7 +28,7 @@ public class OrderProduct extends Timestamped { //주문 이력 정보 저장
     private BigDecimal totalAmount; //주문 당시 가격 * 수량
 
     @Column(nullable = false)
-    private boolean isEventProduct; // 행사 상품 여부
+    private boolean isFlashSaleProduct; // 행사 상품 여부
 
     @ManyToOne
     @JoinColumn(name = "product_id", nullable = false)
@@ -39,12 +39,12 @@ public class OrderProduct extends Timestamped { //주문 이력 정보 저장
     private Order order;
 
     @Builder
-    public OrderProduct(String name, BigDecimal price, int quantity, BigDecimal totalAmount, boolean isEventProduct, Product product, Order order) {
+    public OrderProduct(String name, BigDecimal price, int quantity, BigDecimal totalAmount, boolean isFlashSaleProduct, Product product, Order order) {
         this.name = name;
         this.price = price;
         this.quantity = quantity;
         this.totalAmount = totalAmount;
-        this.isEventProduct = isEventProduct;
+        this.isFlashSaleProduct = isFlashSaleProduct;
         this.product = product;
         this.order = order;
     }
