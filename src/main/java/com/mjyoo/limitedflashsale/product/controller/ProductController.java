@@ -27,7 +27,7 @@ public class ProductController {
     //재고 조회
     @GetMapping("/product/{productId}/stock")
     public ResponseEntity<ApiResponse<?>> getStock(@PathVariable Long productId) {
-        int stockFromCache = inventoryService.getStockFromCache(productId);
+        int stockFromCache = inventoryService.getStock(productId);
         return ResponseEntity.ok(ApiResponse.success(stockFromCache));
     }
 

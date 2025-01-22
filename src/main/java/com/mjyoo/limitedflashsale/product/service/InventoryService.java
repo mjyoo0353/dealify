@@ -1,5 +1,6 @@
 package com.mjyoo.limitedflashsale.product.service;
 
+import com.mjyoo.limitedflashsale.common.util.RedisKeys;
 import com.mjyoo.limitedflashsale.common.exception.CustomException;
 import com.mjyoo.limitedflashsale.common.exception.ErrorCode;
 import com.mjyoo.limitedflashsale.order.entity.Order;
@@ -10,11 +11,14 @@ import com.mjyoo.limitedflashsale.product.repository.InventoryRepository;
 import com.mjyoo.limitedflashsale.product.repository.ProductRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.redisson.api.RLock;
+import org.redisson.api.RedissonClient;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.retry.annotation.Backoff;
 import org.springframework.retry.annotation.Retryable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
 import java.util.concurrent.TimeUnit;
 
 @Slf4j
@@ -25,38 +29,54 @@ public class InventoryService {
     public final ProductRepository productRepository;
     public final InventoryRepository inventoryRepository;
     private final RedisTemplate<String, Object> redisTemplate;
-    private static final String INVENTORY_CACHE_KEY = "inventory:";
 
-    public int getStockFromCache(Long productId) {
-        String key = INVENTORY_CACHE_KEY + productId;
-        Integer cachedStock = (Integer) redisTemplate.opsForValue().get(key);
-
+    // 재고 조회용 - DB 조회 및 캐시 갱신
+    @Transactional(readOnly = true)
+    public int getStock(Long productId) {
+        // 캐시 조회
+        Integer cachedStock = getStockFromCache(productId);
         if (cachedStock != null) {
             return cachedStock;
         }
 
-        // Cache Miss 처리 - DB 조회 후 캐시 저장
-        Inventory inventory = inventoryRepository.findByProductIdWithPessimisticLock(productId)
+        // Cache Miss 처리 - DB 조회 (읽기만 하므로 일반 조회)
+        Inventory inventory = inventoryRepository.findByProductId(productId)
                 .orElseThrow(() -> new CustomException(ErrorCode.PRODUCT_NOT_FOUND));
         int stock = inventory.getStock();
 
+        // 캐시 업데이트
         int ttl = calculateTTL(stock);
-        redisTemplate.opsForValue().setIfAbsent(key, stock, ttl, TimeUnit.MINUTES);
+        redisTemplate.opsForValue().setIfAbsent(RedisKeys.getInventoryCacheKey(productId), stock, ttl, TimeUnit.MINUTES);
         return stock;
     }
 
-    // 재고 차감
+    // 캐시 재고 조회 전용
+    public Integer getStockFromCache(Long productId) {
+        String key = RedisKeys.getInventoryCacheKey(productId);
+        return (Integer) redisTemplate.opsForValue().get(key);
+    }
+
+    // 재고 감소 로직 (비관적 락 사용)
     @Transactional
-    public void decreaseStock(Long productId, int quantity) {
-        // 재고 조회
-        Inventory inventory = inventoryRepository.findById(productId)
+    public void validateAndDecreaseStock(Long productId, int quantity) {
+        // 캐시에서 먼저 재고 조회
+        Integer cachedStock = getStockFromCache(productId);
+        if (cachedStock != null && cachedStock < quantity) {
+            throw new CustomException(ErrorCode.OUT_OF_STOCK);
+        }
+
+        // DB 재고 조회 및 락 획득
+        Inventory inventory = inventoryRepository.findByProductIdWithPessimisticLock(productId)
                 .orElseThrow(() -> new CustomException(ErrorCode.PRODUCT_NOT_FOUND));
 
-        // DB 재고 차감
+        // 락 획득 후 실제 재고 검증
+        if (inventory.getStock() < quantity) {
+            throw new CustomException(ErrorCode.OUT_OF_STOCK);
+        }
+        // 재고 감소
         inventory.decreaseStock(quantity);
-        inventoryRepository.save(inventory);
 
-        // Redis 재고 업데이트
+        // Redis 재고 캐시 업데이트
         updateStockInRedis(productId, inventory.getStock());
     }
 
@@ -78,7 +98,7 @@ public class InventoryService {
                 productRepository.save(product);
 
                 // Redis 재고 업데이트
-                String key = INVENTORY_CACHE_KEY + product.getId();
+                String key = RedisKeys.getInventoryCacheKey(product.getId());
                 int ttl = calculateTTL(product.getInventory().getStock());
                 redisTemplate.opsForValue().set(key, product.getInventory().getStock(), ttl, TimeUnit.MINUTES);
 
@@ -94,7 +114,7 @@ public class InventoryService {
     @Retryable(maxAttempts = 3, backoff = @Backoff(delay = 1000, multiplier = 2))
     @Transactional
     public void updateStockInRedis(Long productId, int newStock) {
-        String key = INVENTORY_CACHE_KEY + productId;
+        String key = RedisKeys.getInventoryCacheKey(productId);
         try {
             int ttl = calculateTTL(newStock);
             redisTemplate.opsForValue().set(key, newStock, ttl, TimeUnit.MINUTES);

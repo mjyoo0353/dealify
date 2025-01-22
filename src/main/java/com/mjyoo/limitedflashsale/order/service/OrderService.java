@@ -89,7 +89,7 @@ public class OrderService {
         int quantity = requestDto.getQuantity();
 
         //재고 확인 및 차감
-        validateAndDecreaseStock(product, quantity);
+        inventoryService.validateAndDecreaseStock(product.getId(), quantity);
 
         BigDecimal priceToApply;
         boolean isFlashSaleProduct = false;
@@ -146,7 +146,7 @@ public class OrderService {
             //상품 조회
             Product product = findActiveProduct(productId);
             //재고 확인 및 차감
-            validateAndDecreaseStock(product, quantity);
+            inventoryService.validateAndDecreaseStock(product.getId(), quantity);
 
             BigDecimal priceToApply;
             boolean isFlashSaleProduct = false;
@@ -259,16 +259,6 @@ public class OrderService {
     private void cacheTemporaryOrder(Order order) {
         String orderTimeoutKey = RedisKeys.getTempOrderKey(order.getId());
         redisTemplate.opsForValue().set(orderTimeoutKey, order.getId(), 5, TimeUnit.MINUTES);
-    }
-
-    // DB & Redis 재고 확인 및 차감 처리
-    private void validateAndDecreaseStock(Product product, int quantity) {
-        // DB 재고 확인
-        if (product.getInventory().getStock() < quantity) {
-            throw new CustomException(ErrorCode.OUT_OF_STOCK);
-        }
-        // 재고 차감 처리 (DB 업데이트 + 레디스 캐시 업데이트)
-        inventoryService.decreaseStock(product.getId(), quantity);
     }
 
     //주문 Entity 생성
