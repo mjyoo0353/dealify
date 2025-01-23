@@ -9,12 +9,12 @@ import java.util.List;
 
 @Getter
 public class CartListResponseDto {
-    private List<CartProductResponseDto> cartProductList = new ArrayList<>();
+    private List<CartItemResponseDto> cartProductList = new ArrayList<>();
     private long totalCartProducts;
     private BigDecimal totalAmount;
 
     @Builder
-    public CartListResponseDto(List<CartProductResponseDto> cartProductList, long totalCartProducts, BigDecimal totalAmount) {
+    public CartListResponseDto(List<CartItemResponseDto> cartProductList, long totalCartProducts, BigDecimal totalAmount) {
         this.cartProductList = cartProductList;
         this.totalCartProducts = totalCartProducts;
         this.totalAmount = totalAmount;

@@ -10,7 +10,8 @@ import java.math.BigDecimal;
 @Entity
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-public class FlashSaleProduct extends Timestamped {
+@Table(name = "flash_sale_items")
+public class FlashSaleItem extends Timestamped {
 
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -18,7 +19,7 @@ public class FlashSaleProduct extends Timestamped {
     @Column(nullable = false, precision = 10, scale = 2)
     private BigDecimal originalPrice; // 정가
 
-    @Column(nullable = false)
+    @Column(nullable = false, precision = 5, scale = 2)
     private BigDecimal discountRate; // 할인율
 
     @Column(nullable = false, precision = 10, scale = 2)
@@ -29,7 +30,7 @@ public class FlashSaleProduct extends Timestamped {
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-    private FlashSaleProductStatus status; // 행사 상품 상태
+    private FlashSaleItemStatus status; // 행사 상품 상태
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "flash_sale_id", nullable = false)
@@ -40,7 +41,7 @@ public class FlashSaleProduct extends Timestamped {
     private Product product;
 
     @Builder
-    public FlashSaleProduct(BigDecimal originalPrice, BigDecimal discountRate, BigDecimal discountedPrice, int initialStock, FlashSaleProductStatus status, FlashSale flashSale, Product product) {
+    public FlashSaleItem(BigDecimal originalPrice, BigDecimal discountRate, BigDecimal discountedPrice, int initialStock, FlashSaleItemStatus status, FlashSale flashSale, Product product) {
         this.originalPrice = originalPrice;
         this.discountRate = discountRate;
         this.discountedPrice = discountedPrice;
@@ -50,7 +51,7 @@ public class FlashSaleProduct extends Timestamped {
         this.product = product;
     }
 
-    public void setStatus(FlashSaleProductStatus status) {
+    public void setStatus(FlashSaleItemStatus status) {
         this.status = status;
     }
 }

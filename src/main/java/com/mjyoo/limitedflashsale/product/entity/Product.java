@@ -1,10 +1,10 @@
 package com.mjyoo.limitedflashsale.product.entity;
 
-import com.mjyoo.limitedflashsale.cart.entity.CartProduct;
-import com.mjyoo.limitedflashsale.flashsale.entity.FlashSaleProduct;
+import com.mjyoo.limitedflashsale.cart.entity.CartItem;
+import com.mjyoo.limitedflashsale.flashsale.entity.FlashSaleItem;
 import com.mjyoo.limitedflashsale.product.dto.ProductRequestDto;
 import com.mjyoo.limitedflashsale.common.entity.Timestamped;
-import com.mjyoo.limitedflashsale.order.entity.OrderProduct;
+import com.mjyoo.limitedflashsale.order.entity.OrderItem;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -15,6 +15,7 @@ import java.util.List;
 @Entity
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
+@Table(name = "products")
 public class Product extends Timestamped {
 
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -33,13 +34,13 @@ public class Product extends Timestamped {
     private Inventory inventory;
 
     @OneToMany(mappedBy = "product")
-    private List<FlashSaleProduct> flashSaleProductList = new ArrayList<>();
+    private List<FlashSaleItem> flashSaleItemList = new ArrayList<>();
 
     @OneToMany(mappedBy = "product")
-    private List<OrderProduct> orderProductList = new ArrayList<>();
+    private List<OrderItem> orderItemList = new ArrayList<>();
 
     @OneToMany(mappedBy = "product")
-    private List<CartProduct> cartProductList = new ArrayList<>();
+    private List<CartItem> cartItemList = new ArrayList<>();
 
     @Builder
     public Product(ProductRequestDto requestDto, int stock) {

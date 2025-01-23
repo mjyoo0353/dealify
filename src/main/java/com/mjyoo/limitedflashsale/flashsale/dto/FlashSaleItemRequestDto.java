@@ -11,7 +11,7 @@ import java.math.BigDecimal;
 
 @Getter
 @Builder
-public class FlashSaleProductRequestDto {
+public class FlashSaleItemRequestDto {
 
     @NotNull
     private Long productId;

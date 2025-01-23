@@ -12,6 +12,7 @@ import java.math.BigDecimal;
 @Entity
 @Getter
 @NoArgsConstructor
+@Table(name = "payments")
 public class Payment extends Timestamped {
 
     @Id

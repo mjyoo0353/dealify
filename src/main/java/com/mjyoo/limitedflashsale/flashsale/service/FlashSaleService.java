@@ -5,10 +5,10 @@ import com.mjyoo.limitedflashsale.common.exception.CustomException;
 import com.mjyoo.limitedflashsale.common.exception.ErrorCode;
 import com.mjyoo.limitedflashsale.flashsale.dto.*;
 import com.mjyoo.limitedflashsale.flashsale.entity.FlashSale;
-import com.mjyoo.limitedflashsale.flashsale.entity.FlashSaleProduct;
-import com.mjyoo.limitedflashsale.flashsale.entity.FlashSaleProductStatus;
+import com.mjyoo.limitedflashsale.flashsale.entity.FlashSaleItem;
+import com.mjyoo.limitedflashsale.flashsale.entity.FlashSaleItemStatus;
 import com.mjyoo.limitedflashsale.flashsale.entity.FlashSaleStatus;
-import com.mjyoo.limitedflashsale.flashsale.repository.FlashSaleProductRepository;
+import com.mjyoo.limitedflashsale.flashsale.repository.FlashSaleItemRepository;
 import com.mjyoo.limitedflashsale.flashsale.repository.FlashSaleRepository;
 import com.mjyoo.limitedflashsale.product.entity.Product;
 import com.mjyoo.limitedflashsale.product.repository.ProductRepository;
@@ -31,7 +31,7 @@ public class FlashSaleService {
 
     private final ProductRepository productRepository;
     private final FlashSaleRepository flashSaleRepository;
-    private final FlashSaleProductRepository flashSaleProductRepository;
+    private final FlashSaleItemRepository flashSaleItemRepository;
 
     //행사 조회
     public FlashSaleResponseDto getFlashSaleDetail(Long flashSaleId) {
@@ -71,7 +71,7 @@ public class FlashSaleService {
 
     //행사 상품 추가
     @Transactional
-    public void addFlashSaleProduct(Long flashSaleId, @Valid FlashSaleProductRequestDto requestDto, User user) {
+    public void addFlashSaleItem(Long flashSaleId, @Valid FlashSaleItemRequestDto requestDto, User user) {
         // 관리자 권한 확인
         checkAdminRole(user);
         // 행사 상품 생성 및 저장
@@ -84,7 +84,7 @@ public class FlashSaleService {
         Product product = findProduct(requestDto.getProductId());
 
         // 행사 상품 중복 확인
-        boolean exists = flashSaleProductRepository.existsByFlashSaleAndProduct(flashSale, product);
+        boolean exists = flashSaleItemRepository.existsByFlashSaleAndProduct(flashSale, product);
         if (exists) {
             throw new CustomException(ErrorCode.PRODUCT_ALREADY_EXISTS);
         }
@@ -98,21 +98,21 @@ public class FlashSaleService {
         BigDecimal discountRate = requestDto.getDiscountRate();
 
         // 행사상품 스냅샷 생성 및 저장
-        FlashSaleProduct flashSaleProduct = FlashSaleProduct.builder()
+        FlashSaleItem flashSaleItem = FlashSaleItem.builder()
                 .flashSale(flashSale)
                 .product(product)
                 .originalPrice(originalPrice)
                 .discountRate(discountRate)
                 .discountedPrice(originalPrice.subtract(originalPrice.multiply(discountRate)))
                 .initialStock(requestDto.getInitialStock())
-                .status(FlashSaleProductStatus.AVAILABLE)
+                .status(FlashSaleItemStatus.AVAILABLE)
                 .build();
-        flashSaleProductRepository.save(flashSaleProduct);
+        flashSaleItemRepository.save(flashSaleItem);
     }
 
     //행사 수정
     @Transactional
-    public FlashSaleResponseDto updateFlashSale(Long flashSaleId, FlashSaleRequestDto requestDto, User user) {
+    public FlashSaleResponseDto updateFlashSale(Long flashSaleId, FlashSaleUpdateRequestDto requestDto, User user) {
         checkAdminRole(user); // 관리자 권한 확인
         FlashSale flashSale = findFlashSale(flashSaleId); // 행사 조회
 
@@ -121,12 +121,6 @@ public class FlashSaleService {
             throw new CustomException(ErrorCode.INVALID_UPDATE_FLASH_SALE);
         }
         flashSale.update(requestDto);
-
-        // 특정 상품의 FlashSaleProduct 업데이트
-        FlashSaleProduct flashSaleProduct = flashSale.getFlashSaleProductList().stream()
-                .filter(fsp -> fsp.getId().equals(flashSale.getId()))
-                .findAny()
-                .orElseThrow(() -> new CustomException(ErrorCode.PRODUCT_NOT_FOUND));
 
         return new FlashSaleResponseDto(flashSale);
     }

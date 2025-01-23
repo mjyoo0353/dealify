@@ -15,7 +15,8 @@ import java.math.BigDecimal;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class CartProduct extends Timestamped {
+@Table(name = "cart_items")
+public class CartItem extends Timestamped {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

@@ -2,7 +2,7 @@ package com.mjyoo.limitedflashsale.cart.controller;
 
 import com.mjyoo.limitedflashsale.cart.dto.CartRequestDto;
 import com.mjyoo.limitedflashsale.cart.dto.CartListResponseDto;
-import com.mjyoo.limitedflashsale.cart.dto.CartProductResponseDto;
+import com.mjyoo.limitedflashsale.cart.dto.CartItemResponseDto;
 import com.mjyoo.limitedflashsale.auth.security.UserDetailsImpl;
 import com.mjyoo.limitedflashsale.cart.dto.CartUpdateRequestDto;
 import com.mjyoo.limitedflashsale.cart.service.CartService;
@@ -33,7 +33,7 @@ public class CartController {
     public ResponseEntity<ApiResponse<?>> addToCart(@RequestBody CartRequestDto requestDto,
                                                     @AuthenticationPrincipal UserDetailsImpl userDetails) {
         User user = userDetails.getUser();
-        CartProductResponseDto cartProduct = cartService.addToCart(requestDto, user);
+        CartItemResponseDto cartProduct = cartService.addToCart(requestDto, user);
         return ResponseEntity.ok(ApiResponse.success(cartProduct));
     }
 

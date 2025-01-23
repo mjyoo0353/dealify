@@ -1,14 +1,14 @@
 package com.mjyoo.limitedflashsale.cart.service;
 
 import com.mjyoo.limitedflashsale.cart.dto.CartRequestDto;
-import com.mjyoo.limitedflashsale.cart.dto.CartProductResponseDto;
+import com.mjyoo.limitedflashsale.cart.dto.CartItemResponseDto;
 import com.mjyoo.limitedflashsale.cart.dto.CartListResponseDto;
 import com.mjyoo.limitedflashsale.cart.entity.Cart;
-import com.mjyoo.limitedflashsale.cart.entity.CartProduct;
+import com.mjyoo.limitedflashsale.cart.entity.CartItem;
 import com.mjyoo.limitedflashsale.common.exception.CustomException;
 import com.mjyoo.limitedflashsale.common.exception.ErrorCode;
 import com.mjyoo.limitedflashsale.product.entity.Product;
-import com.mjyoo.limitedflashsale.cart.repository.CartProductRepository;
+import com.mjyoo.limitedflashsale.cart.repository.CartItemRepository;
 import com.mjyoo.limitedflashsale.cart.repository.CartRepository;
 import com.mjyoo.limitedflashsale.product.repository.ProductRepository;
 import com.mjyoo.limitedflashsale.user.entity.User;
@@ -26,7 +26,7 @@ import java.util.Optional;
 public class CartService {
 
     private final CartRepository cartRepository;
-    private final CartProductRepository cartProductRepository;
+    private final CartItemRepository cartItemRepository;
     private final ProductRepository productRepository;
 
     // 사용자별 장바구니 목록 조회
@@ -36,14 +36,14 @@ public class CartService {
                 .orElseThrow(() -> new CustomException(ErrorCode.CART_NOT_FOUND));
 
         // 장바구니에 담긴 상품 정보를 담을 리스트 생성
-        List<CartProductResponseDto> cartInfoList = new ArrayList<>();
+        List<CartItemResponseDto> cartInfoList = new ArrayList<>();
         // 해당 장바구니에 담긴 모든 상품들을 조회
-        List<CartProduct> cartProductList = cart.getCartProductList();
+        List<CartItem> cartItemList = cart.getCartItemList();
 
         // 장바구니에 담긴 모든 상품들을 하나씩 순회
-        for (CartProduct cartProduct : cartProductList) {
-            CartProductResponseDto cartProductResponseDto = new CartProductResponseDto(cartProduct);
-            cartInfoList.add(cartProductResponseDto);
+        for (CartItem cartItem : cartItemList) {
+            CartItemResponseDto cartItemResponseDto = new CartItemResponseDto(cartItem);
+            cartInfoList.add(cartItemResponseDto);
         }
 
         return CartListResponseDto.builder()
@@ -55,7 +55,7 @@ public class CartService {
 
     // 상품을 장바구니에 추가
     @Transactional
-    public CartProductResponseDto addToCart(CartRequestDto requestDto, User user) {
+    public CartItemResponseDto addToCart(CartRequestDto requestDto, User user) {
         // 유저 장바구니 조회
         Optional<Cart> cartOptional = cartRepository.findByUserId(user.getId());
 
@@ -76,22 +76,22 @@ public class CartService {
         }
 
         // 장바구니에 상품이 있는지 조회
-        CartProduct cartProduct = cartProductRepository.findByCartAndProduct(cart, product)
+        CartItem cartItem = cartItemRepository.findByCartAndProduct(cart, product)
                 .orElse(null);
 
         // 상품이 장바구니에 없으면 추가
-        if (cartProduct == null) {
-            cartProduct = CartProduct.builder()
+        if (cartItem == null) {
+            cartItem = CartItem.builder()
                     .cart(cart)
                     .product(product)
                     .quantity(requestDto.getQuantity())
                     .build();
-            cartProductRepository.save(cartProduct);
+            cartItemRepository.save(cartItem);
         } else {
             // 상품이 장바구니에 있으면 수량만 업데이트
-            cartProduct.updateQuantity(requestDto.getQuantity());
+            cartItem.updateQuantity(requestDto.getQuantity());
         }
-        return new CartProductResponseDto(cartProduct);
+        return new CartItemResponseDto(cartItem);
     }
 
     // 장바구니 상품 수량 업데이트
@@ -105,7 +105,7 @@ public class CartService {
         Product product = getValidProduct(productId);
 
         // 장바구니 상품 조회
-        CartProduct cartProduct = cartProductRepository.findByCartAndProduct(cart, product)
+        CartItem cartItem = cartItemRepository.findByCartAndProduct(cart, product)
                 .orElseThrow(() -> new CustomException(ErrorCode.CART_PRODUCT_NOT_FOUND));
 
         // 수량/재고 유효한지 확인
@@ -114,7 +114,7 @@ public class CartService {
         }
 
         // 장바구니 상품 수량 업데이트
-        cartProduct.setQuantity(quantity);
+        cartItem.setQuantity(quantity);
     }
 
     // 장바구니에서 상품 삭제
@@ -127,11 +127,11 @@ public class CartService {
         Product product = getValidProduct(productId);
 
         // 장바구니 상품 조회
-        CartProduct cartProduct = cartProductRepository.findByCartAndProduct(cart, product)
+        CartItem cartItem = cartItemRepository.findByCartAndProduct(cart, product)
                 .orElseThrow(() -> new CustomException(ErrorCode.CART_PRODUCT_NOT_FOUND));
 
         // 장바구니 상품 삭제
-        cartProductRepository.delete(cartProduct);
+        cartItemRepository.delete(cartItem);
     }
 
     @NotNull

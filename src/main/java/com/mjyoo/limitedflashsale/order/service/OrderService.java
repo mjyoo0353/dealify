@@ -2,26 +2,26 @@ package com.mjyoo.limitedflashsale.order.service;
 
 import com.mjyoo.limitedflashsale.cart.dto.CartRequestDto;
 import com.mjyoo.limitedflashsale.cart.entity.Cart;
-import com.mjyoo.limitedflashsale.cart.entity.CartProduct;
+import com.mjyoo.limitedflashsale.cart.entity.CartItem;
 import com.mjyoo.limitedflashsale.cart.repository.CartRepository;
 import com.mjyoo.limitedflashsale.common.util.RedisKeys;
 import com.mjyoo.limitedflashsale.common.exception.CustomException;
 import com.mjyoo.limitedflashsale.common.exception.ErrorCode;
 import com.mjyoo.limitedflashsale.flashsale.entity.FlashSale;
-import com.mjyoo.limitedflashsale.flashsale.entity.FlashSaleProduct;
-import com.mjyoo.limitedflashsale.flashsale.entity.FlashSaleProductStatus;
+import com.mjyoo.limitedflashsale.flashsale.entity.FlashSaleItem;
+import com.mjyoo.limitedflashsale.flashsale.entity.FlashSaleItemStatus;
 import com.mjyoo.limitedflashsale.flashsale.entity.FlashSaleStatus;
-import com.mjyoo.limitedflashsale.flashsale.repository.FlashSaleProductRepository;
+import com.mjyoo.limitedflashsale.flashsale.repository.FlashSaleItemRepository;
 import com.mjyoo.limitedflashsale.flashsale.repository.FlashSaleRepository;
 import com.mjyoo.limitedflashsale.order.dto.OrderRequestDto;
 import com.mjyoo.limitedflashsale.order.dto.OrderListResponseDto;
 import com.mjyoo.limitedflashsale.order.dto.OrderResponseDto;
 import com.mjyoo.limitedflashsale.order.entity.Order;
-import com.mjyoo.limitedflashsale.order.entity.OrderProduct;
+import com.mjyoo.limitedflashsale.order.entity.OrderItem;
 import com.mjyoo.limitedflashsale.order.entity.OrderStatus;
 import com.mjyoo.limitedflashsale.payment.entity.PaymentStatus;
 import com.mjyoo.limitedflashsale.product.entity.Product;
-import com.mjyoo.limitedflashsale.order.repository.OrderProductRepository;
+import com.mjyoo.limitedflashsale.order.repository.OrderItemRepository;
 import com.mjyoo.limitedflashsale.order.repository.OrderRepository;
 import com.mjyoo.limitedflashsale.product.repository.ProductRepository;
 import com.mjyoo.limitedflashsale.product.service.InventoryService;
@@ -47,9 +47,9 @@ public class OrderService {
 
     private final OrderRepository orderRepository;
     private final ProductRepository productRepository;
-    private final OrderProductRepository orderProductRepository;
+    private final OrderItemRepository orderItemRepository;
     private final CartRepository cartRepository;
-    private final FlashSaleProductRepository flashSaleProductRepository;
+    private final FlashSaleItemRepository flashSaleItemRepository;
     private final FlashSaleRepository flashSaleRepository;
     private final InventoryService inventoryService;
     private final RedisTemplate<String, Object> redisTemplate;
@@ -92,15 +92,15 @@ public class OrderService {
         inventoryService.validateAndDecreaseStock(product.getId(), quantity);
 
         BigDecimal priceToApply;
-        boolean isFlashSaleProduct = false;
+        boolean isFlashSaleItem = false;
 
         //해당 상품이 행사 상품인지 확인
-        BigDecimal flashSalePrice = processFlashSaleProduct(product);
+        BigDecimal flashSalePrice = processFlashSaleItem(product);
 
         //행사상품이면 할인된 가격 적용
         if (flashSalePrice != null) {
             priceToApply = flashSalePrice;
-            isFlashSaleProduct = true;
+            isFlashSaleItem = true;
         } else {
             //행사 상품이 아닌 경우 일반 가격 적용
             priceToApply = product.getPrice();
@@ -109,10 +109,10 @@ public class OrderService {
         //주문 생성
         Order order = createOrderEntity(user);
         //주문 상품 생성
-        OrderProduct orderProduct = createOrderProductEntity(order, product, priceToApply, quantity, isFlashSaleProduct);
+        OrderItem orderItem = createOrderProductEntity(order, product, priceToApply, quantity, isFlashSaleItem);
         // 주문 상품 리스트에 단일 상품 추가
-        order.getOrderProductList().add(orderProduct);
-        orderProductRepository.save(orderProduct);
+        order.getOrderItemList().add(orderItem);
+        orderItemRepository.save(orderItem);
 
         // 레디스 임시 주문 정보 저장 및 만료 TTL 설정 (5분)
         cacheTemporaryOrder(order);
@@ -128,7 +128,7 @@ public class OrderService {
         //주문 생성
         Order order = createOrderEntity(user);
         // 주문 상품 리스트 생성
-        List<OrderProduct> orderProductList = new ArrayList<>();
+        List<OrderItem> orderItemList = new ArrayList<>();
 
         // 사용자가 요청한 주문 상품 리스트를 순회하며 주문 상품 생성
         for (CartRequestDto cartRequest : cartRequestDtos) {
@@ -136,10 +136,10 @@ public class OrderService {
             int quantity = cartRequest.getQuantity();
 
             //사용자의 장바구니에 해당 상품이 있는지 확인
-            CartProduct cartProduct = findProductFromCart(cart, productId);
+            CartItem cartItem = findProductFromCart(cart, productId);
 
             //장바구니 수량과 요청 수량이 일치하는지 검증
-            if (cartProduct.getQuantity() < quantity) {
+            if (cartItem.getQuantity() < quantity) {
                 throw new CustomException(ErrorCode.INVALID_QUANTITY);
             }
 
@@ -149,31 +149,31 @@ public class OrderService {
             inventoryService.validateAndDecreaseStock(product.getId(), quantity);
 
             BigDecimal priceToApply;
-            boolean isFlashSaleProduct = false;
+            boolean isFlashSaleItem = false;
 
             //해당 상품이 행사 상품인지 확인
-            BigDecimal flashSalePrice = processFlashSaleProduct(product);
+            BigDecimal flashSalePrice = processFlashSaleItem(product);
 
             //행사 상품인 경우 할인된 가격 적용
             if (flashSalePrice != null) {
                 priceToApply = flashSalePrice;
-                isFlashSaleProduct = true;
+                isFlashSaleItem = true;
             } else {
                 //행사 상품이 아닌 경우 일반 가격 적용
                 priceToApply = product.getPrice();
             }
 
             //주문 상품 생성
-            OrderProduct orderProduct = createOrderProductEntity(order, product, priceToApply, quantity, isFlashSaleProduct);
+            OrderItem orderItem = createOrderProductEntity(order, product, priceToApply, quantity, isFlashSaleItem);
             //주문 상품 리스트에 추가
-            orderProductList.add(orderProduct);
+            orderItemList.add(orderItem);
             //장바구니에서 주문한 상품만 제거
-            cart.getCartProductList().remove(cartProduct);
+            cart.getCartItemList().remove(cartItem);
         }
 
         //주문 상품 리스트에 주문 상품 추가
-        order.getOrderProductList().addAll(orderProductList);
-        orderProductRepository.saveAll(orderProductList);
+        order.getOrderItemList().addAll(orderItemList);
+        orderItemRepository.saveAll(orderItemList);
         cartRepository.save(cart);
 
         // 레디스 임시 주문 정보 저장 및 만료 TTL 설정 (5분)
@@ -200,10 +200,10 @@ public class OrderService {
         order.getPayment().setStatus(PaymentStatus.CANCELED);
 
         //취소된 주문에 대한 모든 상품 처리
-        for (OrderProduct orderProduct : order.getOrderProductList()) {
-            Product product = orderProduct.getProduct();
+        for (OrderItem orderItem : order.getOrderItemList()) {
+            Product product = orderItem.getProduct();
             //취소된 상품 수량 재고에 추가
-            product.getInventory().restoreStock(orderProduct.getQuantity());
+            product.getInventory().restoreStock(orderItem.getQuantity());
         }
         orderRepository.save(order);
     }
@@ -248,8 +248,8 @@ public class OrderService {
     }
 
     //장바구니 상품 조회
-    private CartProduct findProductFromCart(Cart cart, Long productId) {
-        return cart.getCartProductList().stream()
+    private CartItem findProductFromCart(Cart cart, Long productId) {
+        return cart.getCartItemList().stream()
                 .filter(cp -> cp.getProduct().getId().equals(productId))
                 .findAny()
                 .orElseThrow(() -> new CustomException(ErrorCode.CART_PRODUCT_NOT_FOUND));
@@ -267,36 +267,36 @@ public class OrderService {
                 .user(user)
                 .status(OrderStatus.ORDER_PROCESSING)
                 .expiryTime(LocalDateTime.now().plusMinutes(5)) // 5분 후 만료
-                .orderProductList(new ArrayList<>())
+                .orderItemList(new ArrayList<>())
                 .build();
         orderRepository.save(order);
         return order;
     }
 
     //주문 상품 Entity 생성
-    private OrderProduct createOrderProductEntity(Order order, Product product, BigDecimal price, int quantity, boolean isFlashSaleProduct) {
-        return OrderProduct.builder()
+    private OrderItem createOrderProductEntity(Order order, Product product, BigDecimal price, int quantity, boolean isFlashSaleItem) {
+        return OrderItem.builder()
                 .order(order)
                 .product(product)
                 .name(product.getName())
                 .price(price)
                 .quantity(quantity)
                 .totalAmount(price.multiply(BigDecimal.valueOf(quantity)))
-                .isFlashSaleProduct(isFlashSaleProduct)
+                .isFlashSaleItem(isFlashSaleItem)
                 .build();
     }
 
     //행사 상품 처리
-    private BigDecimal processFlashSaleProduct(Product product) {
+    private BigDecimal processFlashSaleItem(Product product) {
         //해당 상품이 행사 상품인지 확인
-        FlashSaleProduct flashSaleProduct = flashSaleProductRepository.findByProductIdAndFlashSaleStatus(product.getId())
+        FlashSaleItem flashSaleItem = flashSaleItemRepository.findByProductIdAndFlashSaleStatus(product.getId())
                 .orElse(null);
 
         //행사 상품인 경우
-        if (flashSaleProduct != null) {
+        if (flashSaleItem != null) {
 
             // 행사 조회
-            FlashSale flashSale = flashSaleProduct.getFlashSale();
+            FlashSale flashSale = flashSaleItem.getFlashSale();
 
             // 행사 시작 시간이 현재 시간보다 미래인지 확인하고 미래라면 예외 발생
             if (LocalDateTime.now().isBefore(flashSale.getStartTime())) {
@@ -310,13 +310,13 @@ public class OrderService {
 
             //재고가 없으면 상태 변경
             if (product.getInventory().getStock() == 0) {
-                flashSaleProduct.setStatus(FlashSaleProductStatus.OUT_OF_STOCK);
-                flashSaleProductRepository.save(flashSaleProduct);
+                flashSaleItem.setStatus(FlashSaleItemStatus.OUT_OF_STOCK);
+                flashSaleItemRepository.save(flashSaleItem);
 
                 flashSale.updateStatus(FlashSaleStatus.ENDED);
                 flashSaleRepository.save(flashSale);
             }
-            return flashSaleProduct.getDiscountedPrice();
+            return flashSaleItem.getDiscountedPrice();
         }
         return null;
     }

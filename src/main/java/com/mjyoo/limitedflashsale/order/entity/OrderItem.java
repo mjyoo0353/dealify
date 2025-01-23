@@ -10,7 +10,8 @@ import java.math.BigDecimal;
 @Entity
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-public class OrderProduct extends Timestamped { //주문 이력 정보 저장
+@Table(name = "order_items")
+public class OrderItem extends Timestamped { //주문 이력 정보 저장
 
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -28,7 +29,7 @@ public class OrderProduct extends Timestamped { //주문 이력 정보 저장
     private BigDecimal totalAmount; //주문 당시 가격 * 수량
 
     @Column(nullable = false)
-    private boolean isFlashSaleProduct; // 행사 상품 여부
+    private boolean isFlashSaleItem; // 행사 상품 여부
 
     @ManyToOne
     @JoinColumn(name = "product_id", nullable = false)
@@ -39,12 +40,12 @@ public class OrderProduct extends Timestamped { //주문 이력 정보 저장
     private Order order;
 
     @Builder
-    public OrderProduct(String name, BigDecimal price, int quantity, BigDecimal totalAmount, boolean isFlashSaleProduct, Product product, Order order) {
+    public OrderItem(String name, BigDecimal price, int quantity, BigDecimal totalAmount, boolean isFlashSaleItem, Product product, Order order) {
         this.name = name;
         this.price = price;
         this.quantity = quantity;
         this.totalAmount = totalAmount;
-        this.isFlashSaleProduct = isFlashSaleProduct;
+        this.isFlashSaleItem = isFlashSaleItem;
         this.product = product;
         this.order = order;
     }

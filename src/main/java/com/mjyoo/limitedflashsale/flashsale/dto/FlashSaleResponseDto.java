@@ -17,7 +17,7 @@ public class FlashSaleResponseDto {
     private LocalDateTime startTime;
     private LocalDateTime endTime;
     private FlashSaleStatus status;
-    private List<FlashSaleProductResponseDto> flashSaleProductList;
+    private List<FlashSaleItemResponseDto> flashSaleItemList;
 
     public FlashSaleResponseDto(FlashSale flashSale) {
         this.flashSaleId = flashSale.getId();
@@ -25,8 +25,8 @@ public class FlashSaleResponseDto {
         this.startTime = flashSale.getStartTime();
         this.endTime = flashSale.getEndTime();
         this.status = flashSale.getStatus();
-        this.flashSaleProductList = flashSale.getFlashSaleProductList().stream()
-                .map(FlashSaleProductResponseDto::new)
+        this.flashSaleItemList = flashSale.getFlashSaleItemList().stream()
+                .map(FlashSaleItemResponseDto::new)
                 .collect(Collectors.toList());
     }
 }

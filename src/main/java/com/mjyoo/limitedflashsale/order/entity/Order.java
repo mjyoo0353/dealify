@@ -36,21 +36,21 @@ public class Order extends Timestamped {
     private Payment payment;
 
     @OneToMany(mappedBy = "order", cascade = {CascadeType.PERSIST, CascadeType.MERGE})
-    private List<OrderProduct> orderProductList = new ArrayList<>();
+    private List<OrderItem> orderItemList = new ArrayList<>();
 
     @Builder
-    public Order(OrderStatus status, LocalDateTime expiryTime, User user, Payment payment, List<OrderProduct> orderProductList) {
+    public Order(OrderStatus status, LocalDateTime expiryTime, User user, Payment payment, List<OrderItem> orderItemList) {
         this.status = status;
         this.expiryTime = expiryTime;
         this.user = user;
         this.payment = payment;
-        this.orderProductList = orderProductList;
+        this.orderItemList = orderItemList;
     }
 
     public BigDecimal getTotalAmount() {
         BigDecimal totalAmount = BigDecimal.ZERO;
-        for (OrderProduct orderProduct : orderProductList) {
-            totalAmount = totalAmount.add(orderProduct.getTotalAmount());
+        for (OrderItem orderItem : orderItemList) {
+            totalAmount = totalAmount.add(orderItem.getTotalAmount());
         }
         return totalAmount;
     }

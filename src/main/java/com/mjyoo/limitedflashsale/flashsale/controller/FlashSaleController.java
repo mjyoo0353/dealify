@@ -44,18 +44,18 @@ public class FlashSaleController {
 
     // 행사 상품 추가
     @PostMapping("/flash-sale/{flashSaleId}/products")
-    public ResponseEntity<ApiResponse<?>> addFlashSaleProduct(@PathVariable Long flashSaleId,
-                                                              @Valid @RequestBody FlashSaleProductRequestDto requestDto,
+    public ResponseEntity<ApiResponse<?>> addFlashSaleItem(@PathVariable Long flashSaleId,
+                                                              @Valid @RequestBody FlashSaleItemRequestDto requestDto,
                                                               @AuthenticationPrincipal UserDetailsImpl userDetails) {
         User user = userDetails.getUser();
-        flashSaleService.addFlashSaleProduct(flashSaleId, requestDto, user);
+        flashSaleService.addFlashSaleItem(flashSaleId, requestDto, user);
         return ResponseEntity.ok(ApiResponse.success("행사 상품이 추가되었습니다."));
     }
 
     // 행사 수정
     @PutMapping("/flash-sale/{flashSaleId}")
     public ResponseEntity<ApiResponse<?>> updateFlashSale(@PathVariable Long flashSaleId,
-                                                          @Valid @RequestBody FlashSaleRequestDto requestDto,
+                                                          @Valid @RequestBody FlashSaleUpdateRequestDto requestDto,
                                                           @AuthenticationPrincipal UserDetailsImpl userDetails) {
         User user = userDetails.getUser();
         FlashSaleResponseDto flashSaleResponseDto = flashSaleService.updateFlashSale(flashSaleId, requestDto, user);

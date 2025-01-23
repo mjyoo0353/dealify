@@ -11,6 +11,7 @@ import java.util.List;
 @Entity
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
+@Table(name = "carts")
 public class Cart {
 
     @Id
@@ -22,7 +23,7 @@ public class Cart {
     private User user;
 
     @OneToMany(mappedBy = "cart", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<CartProduct> cartProductList = new ArrayList<>();
+    private List<CartItem> cartItemList = new ArrayList<>();
 
     public Cart(User user) {
         this.user = user;
@@ -30,8 +31,8 @@ public class Cart {
 
     public BigDecimal getTotalAmount() {
         BigDecimal totalAmount = BigDecimal.ZERO;
-        for (CartProduct cartProduct : cartProductList) {
-            totalAmount = totalAmount.add(cartProduct.getTotalPrice());
+        for (CartItem cartItem : cartItemList) {
+            totalAmount = totalAmount.add(cartItem.getTotalPrice());
         }
         return totalAmount;
     }
