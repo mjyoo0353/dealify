@@ -48,7 +48,7 @@ public class OrderController {
                                                       @AuthenticationPrincipal UserDetailsImpl userDetails) {
         User user = userDetails.getUser();
         Long orderId = orderService.createOrder(requestDto, user);
-        return ResponseEntity.ok(ApiResponse.success("주문이 완료되었습니다.", orderId));
+        return ResponseEntity.ok(ApiResponse.success("An order has been created.", orderId));
     }
 
     //장바구니 상품 주문 생성
@@ -57,7 +57,7 @@ public class OrderController {
                                                               @AuthenticationPrincipal UserDetailsImpl userDetails) {
         User user = userDetails.getUser();
         Long orderId = orderService.createOrderFromCart(cartRequestDtos, user);
-        return ResponseEntity.ok(ApiResponse.success("주문이 생성되었습니다.", orderId));
+        return ResponseEntity.ok(ApiResponse.success("An order has been created.", orderId));
     }
 
     //주문 취소
@@ -66,7 +66,7 @@ public class OrderController {
                                                       @AuthenticationPrincipal UserDetailsImpl userDetails) {
         User user = userDetails.getUser();
         orderService.cancelOrder(orderId, user);
-        return ResponseEntity.ok(ApiResponse.success("주문이 취소되었습니다."));
+        return ResponseEntity.ok(ApiResponse.success("The order has been canceled."));
 
     }
 }

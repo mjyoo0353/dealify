@@ -27,7 +27,7 @@ public class AuthController {
     @PostMapping("/send-verification-code")
     public ResponseEntity<?> sendVerificationEmail(@RequestParam String email) throws MessagingException, UnsupportedEncodingException {
         emailVerificationService.sendVerificationEmail(email);
-        return ResponseEntity.ok(ApiResponse.success("인증 코드가 이메일로 전송되었습니다."));
+        return ResponseEntity.ok(ApiResponse.success("A verification code has been sent to your email."));
     }
 
     //인증코드 확인
@@ -35,9 +35,9 @@ public class AuthController {
     public ResponseEntity<?> verifyEmail(@RequestBody EmailVerificationDto emailVerificationDto) {
         boolean isVerified = emailVerificationService.verifyEmail(emailVerificationDto.getEmail(), emailVerificationDto.getCode());
         if (isVerified) {
-            return ResponseEntity.ok().body(ApiResponse.success("이메일 인증이 완료되었습니다."));
+            return ResponseEntity.ok().body(ApiResponse.success("Your email has been verified."));
         } else {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ApiResponse.fail("인증 코드가 일치하지 않습니다."));
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ApiResponse.error("The verification code is incorrect."));
         }
     }
 
@@ -45,7 +45,7 @@ public class AuthController {
     @PostMapping("/login")
     public ResponseEntity<?> login(@Valid @RequestBody LoginRequestDto requestDto, HttpServletResponse response) {
         LoginResponseDto loginResponseDto = authService.login(requestDto, response);
-        return ResponseEntity.ok().body(ApiResponse.success("로그인 되었습니다.", loginResponseDto));
+        return ResponseEntity.ok().body(ApiResponse.success("Successfully logged in.", loginResponseDto));
     }
 
     //Access Token 재발급
@@ -60,7 +60,7 @@ public class AuthController {
     @PostMapping("/logout")
     public ResponseEntity<?> logout(HttpServletResponse response) {
         authService.logout(response);
-        return ResponseEntity.ok().body(ApiResponse.success("로그아웃 되었습니다."));
+        return ResponseEntity.ok().body(ApiResponse.success("Successfully logged out."));
     }
 
 }

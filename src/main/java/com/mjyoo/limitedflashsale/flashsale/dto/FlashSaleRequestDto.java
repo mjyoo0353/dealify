@@ -7,13 +7,13 @@ import java.time.LocalDateTime;
 @Getter
 public class FlashSaleRequestDto {
 
-    @NotNull(message = "행사 이름을 입력해주세요.")
+    @NotNull(message = "Please enter the name.")
     private String name;
 
-    @NotNull(message = "시작 시간을 입력해주세요.")
+    @NotNull(message = "Please enter the start time.")
     private LocalDateTime startTime;
 
-    @NotNull(message = "종료 시간을 입력해주세요.")
+    @NotNull(message = "Please enter the end time.")
     private LocalDateTime endTime;
 
 }

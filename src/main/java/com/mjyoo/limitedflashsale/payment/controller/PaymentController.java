@@ -23,7 +23,7 @@ public class PaymentController {
                                         @AuthenticationPrincipal UserDetailsImpl userDetails) {
         User user = userDetails.getUser();
         PaymentResponseDto response = paymentService.processPayment(orderId, user);
-        String message = (response.getStatus() == PaymentStatus.SUCCESS) ? "결제가 완료되었습니다." : "결제에 실패했습니다.";
+        String message = (response.getStatus() == PaymentStatus.SUCCESS) ? "Payment has been processed." : "Payment failed.";
         return ApiResponse.success(message, response);
     }
 }

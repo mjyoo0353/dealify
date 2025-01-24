@@ -12,24 +12,24 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 public class SignupRequestDto {
 
-    @NotNull(message = "이메일을 입력해주세요.")
-    @Email(message = "이메일 형식이 올바르지 않습니다.")
+    @NotNull(message = "Please enter your email.")
+    @Email(message = "Please enter a valid email.")
     private String email;
 
-    @NotNull(message = "인증 코드를 입력해주세요.")
+    @NotNull(message = "Please enter the verification code.")
     private String verificationCode;
 
-    @NotNull(message = "사용자 이름을 입력해주세요.")
-    @Size(min = 3, max = 20, message = "사용자 이름은 3자 이상 20자 이내여야 합니다.")
+    @NotNull(message = "Please enter your name.")
+    @Size(min = 3, max = 20, message = "Username must be between 3 and 20 characters.")
     private String username;
 
-    @NotNull(message = "비밀번호를 입력해주세요.")
+    @NotNull(message = "Please enter your password.")
     private String password;
 
-    @NotNull(message = "연락처를 입력해주세요.")
+    @NotNull(message = "Please enter your phone number.")
     private String phoneNumber;
 
-    @NotNull(message = "주소를 입력해주세요.")
+    @NotNull(message = "Please enter your address.")
     private String address;
 
     private boolean admin = false;

@@ -6,7 +6,7 @@ import lombok.Getter;
 @Getter
 public class CartUpdateRequestDto {
 
-    @Min(value = 1, message = "수량은 1개 이상이어야 합니다.")
+    @Min(value = 1, message = "Quantity must be greater than 1.")
     private int quantity;
 
     public CartUpdateRequestDto(int quantity) {

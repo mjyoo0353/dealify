@@ -66,7 +66,7 @@ public class ProductController {
                                            @AuthenticationPrincipal UserDetailsImpl userDetails) {
         User user = userDetails.getUser();
         ProductResponseDto product = productService.createProduct(requestDto, requestDto.getStock(), user);
-        return ResponseEntity.ok(ApiResponse.success("상품이 생성되었습니다.", product));
+        return ResponseEntity.ok(ApiResponse.success("A product has been created.", product));
     }
 
     //상품 수정
@@ -76,7 +76,7 @@ public class ProductController {
                                            @AuthenticationPrincipal UserDetailsImpl userDetails) {
         User user = userDetails.getUser();
         ProductResponseDto productResponseDto = productService.updateProduct(productId, requestDto, requestDto.getStock(), user);
-        return ResponseEntity.ok(ApiResponse.success("상품이 수정되었습니다.", productResponseDto));
+        return ResponseEntity.ok(ApiResponse.success("The product has been updated.", productResponseDto));
     }
 
     //상품 삭제
@@ -85,7 +85,7 @@ public class ProductController {
                                                         @AuthenticationPrincipal UserDetailsImpl userDetails) {
         User user = userDetails.getUser();
         productService.deleteProduct(productId, user); // soft delete
-        return ResponseEntity.ok(ApiResponse.success("상품이 삭제되었습니다."));
+        return ResponseEntity.ok(ApiResponse.success("The product has been deleted."));
     }
 
 }

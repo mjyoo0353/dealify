@@ -43,7 +43,7 @@ public class CartController {
                                                      @AuthenticationPrincipal UserDetailsImpl userDetails) {
         User user = userDetails.getUser();
         cartService.updateCart(productId, requestDto.getQuantity(), user);
-        return ResponseEntity.ok(ApiResponse.success("상품 수량이 수정되었습니다."));
+        return ResponseEntity.ok(ApiResponse.success("The quantity of the product in the cart has been updated."));
     }
 
     // 장바구니에서 상품 삭제
@@ -52,7 +52,7 @@ public class CartController {
                                                          @AuthenticationPrincipal UserDetailsImpl userDetails) {
         User user = userDetails.getUser();
         cartService.deleteFromCart(productId, user);
-        return ResponseEntity.ok(ApiResponse.success("장바구니에서 상품이 삭제되었습니다."));
+        return ResponseEntity.ok(ApiResponse.success("The product has been removed from the cart."));
     }
 
 }

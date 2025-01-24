@@ -39,7 +39,7 @@ public class FlashSaleController {
                                                           @AuthenticationPrincipal UserDetailsImpl userDetails) {
         User user = userDetails.getUser();
         Long flashSaleId = flashSaleService.createFlashSale(requestDto, user);
-        return ResponseEntity.ok(ApiResponse.success("행사가 생성되었습니다.", flashSaleId));
+        return ResponseEntity.ok(ApiResponse.success("Flash sale has been created successfully.", flashSaleId));
     }
 
     // 행사 상품 추가
@@ -49,7 +49,7 @@ public class FlashSaleController {
                                                               @AuthenticationPrincipal UserDetailsImpl userDetails) {
         User user = userDetails.getUser();
         flashSaleService.addFlashSaleItem(flashSaleId, requestDto, user);
-        return ResponseEntity.ok(ApiResponse.success("행사 상품이 추가되었습니다."));
+        return ResponseEntity.ok(ApiResponse.success("The product has been added to the flash sale."));
     }
 
     // 행사 수정
@@ -59,7 +59,7 @@ public class FlashSaleController {
                                                           @AuthenticationPrincipal UserDetailsImpl userDetails) {
         User user = userDetails.getUser();
         FlashSaleResponseDto flashSaleResponseDto = flashSaleService.updateFlashSale(flashSaleId, requestDto, user);
-        return ResponseEntity.ok(ApiResponse.success("행사가 수정되었습니다.", flashSaleResponseDto));
+        return ResponseEntity.ok(ApiResponse.success("The flash sale has been updated.", flashSaleResponseDto));
     }
 
     // 행사 삭제
@@ -68,7 +68,7 @@ public class FlashSaleController {
                                                           @AuthenticationPrincipal UserDetailsImpl userDetails) {
         User user = userDetails.getUser();
         flashSaleService.deleteFlashSale(flashSaleId, user);
-        return ResponseEntity.ok(ApiResponse.success("행사가 삭제되었습니다."));
+        return ResponseEntity.ok(ApiResponse.success("The flash sale has been deleted."));
     }
 
     // 행사 오픈
@@ -77,7 +77,7 @@ public class FlashSaleController {
                                                         @AuthenticationPrincipal UserDetailsImpl userDetails) {
         User user = userDetails.getUser();
         flashSaleService.openFlashSale(flashSaleId, user);
-        return ResponseEntity.ok(ApiResponse.success("행사가 오픈되었습니다."));
+        return ResponseEntity.ok(ApiResponse.success("The flash sale has been opened."));
     }
 
     // 행사 종료
@@ -86,6 +86,6 @@ public class FlashSaleController {
                                                           @AuthenticationPrincipal UserDetailsImpl userDetails) {
         User user = userDetails.getUser();
         flashSaleService.closeFlashSale(flashSaleId, user);
-        return ResponseEntity.ok(ApiResponse.success("행사가 종료되었습니다."));
+        return ResponseEntity.ok(ApiResponse.success("The flash sale has been closed."));
     }
 }

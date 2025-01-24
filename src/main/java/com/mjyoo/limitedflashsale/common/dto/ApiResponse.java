@@ -6,31 +6,30 @@ import java.time.LocalDateTime;
 
 @Getter
 public class ApiResponse<T> {
-    private String timestamp;
-    private boolean success;
-    private String message;
-    private T data;
+    private final LocalDateTime timestamp;
+    private final String status; // "SUCCESS" or "FAIL"
+    private final String message;
+    private final T data;
 
-    public ApiResponse(boolean success, String message, T data, String timestamp) {
-        this.success = success;
+    public ApiResponse(String status, String message, T data) {
+        this.timestamp = LocalDateTime.now();
+        this.status = status;
         this.message = message;
         this.data = data;
-        this.timestamp = timestamp;
+
     }
 
-    // 성공 응답 생성 메서드
     public static <T> ApiResponse<T> success(T data) {
-        return new ApiResponse<>(true, "요청이 성공적으로 처리되었습니다.", data, LocalDateTime.now().toString());
+        return new ApiResponse<>("SUCCESS", null, data);
     }
 
-    // 데이터만 있는 성공 응답 생성 메서드
     public static <T> ApiResponse<T> success(String message, T data) {
-        return new ApiResponse<>(true, message, data, LocalDateTime.now().toString());
+        return new ApiResponse<>("SUCCESS", message, data);
     }
 
     // 실패 응답 생성 메서드
-    public static ApiResponse<?> fail(String message) {
-        return new ApiResponse<>(false, message, null, LocalDateTime.now().toString());
+    public static ApiResponse<?> error(String message) {
+        return new ApiResponse<>("ERROR", message, null);
     }
 
 

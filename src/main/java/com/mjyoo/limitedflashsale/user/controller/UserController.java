@@ -29,7 +29,7 @@ public class UserController {
     @PostMapping("/user/signup")
     public ResponseEntity<?> signup(@Valid @RequestBody SignupRequestDto requestDto) throws MessagingException {
         userService.signup(requestDto);
-        return ResponseEntity.ok(ApiResponse.success("회원가입에 성공했습니다."));
+        return ResponseEntity.ok(ApiResponse.success("Successfully signed up."));
     }
 
     //마이페이지 조회
@@ -37,7 +37,7 @@ public class UserController {
     public ResponseEntity<ApiResponse<?>> getMyPage(@AuthenticationPrincipal UserDetailsImpl userDetails) {
         if(userDetails == null) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                    .body(ApiResponse.fail(ErrorCode.UNAUTHORIZED.getMessage()));
+                    .body(ApiResponse.error(ErrorCode.UNAUTHORIZED.getMessage()));
         }
         User user = userDetails.getUser();
         UserResponseDto userResponseDto = userService.getMyPage(user);

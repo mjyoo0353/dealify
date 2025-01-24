@@ -13,15 +13,15 @@ import java.math.BigDecimal;
 @Getter
 public class ProductRequestDto {
 
-    @NotBlank(message = "상품명을 입력해주세요.")
+    @NotBlank(message = "Please enter the product name.")
     private String name;
 
-    @NotNull(message = "가격을 입력해주세요.")
-    @Positive(message = "가격은 $1 이상이어야 합니다.")
+    @NotNull(message = "Please enter the price.")
+    @Positive(message = "The price must be greater than $1.")
     private BigDecimal price;
 
-    @NotNull(message = "재고를 입력해주세요.")
-    @Min(value = 1, message = "수량은 1 이상이어야 합니다.")
+    @NotNull(message = "Please enter the stock.")
+    @Min(value = 1, message = "The stock must be at least 1.")
     private int stock;
 
     @Builder
