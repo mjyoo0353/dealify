@@ -44,8 +44,8 @@ public class AuthController {
     //로그인
     @PostMapping("/login")
     public ResponseEntity<?> login(@Valid @RequestBody LoginRequestDto requestDto, HttpServletResponse response) {
-        LoginResponseDto loginResponseDto = authService.login(requestDto, response);
-        return ResponseEntity.ok().body(ApiResponse.success("Successfully logged in.", loginResponseDto));
+        authService.login(requestDto, response);
+        return ResponseEntity.ok().body(ApiResponse.success("Successfully logged in."));
     }
 
     //Access Token 재발급

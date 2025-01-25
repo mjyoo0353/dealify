@@ -18,7 +18,6 @@ import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
@@ -32,11 +31,10 @@ public class ProductService {
     private final ProductRepository productRepository;
     private final RedisTemplate<String, Object> redisTemplate;
     private final InventoryService inventoryService;
-    private static final BigDecimal MIN_PRICE = new BigDecimal("1");
 
     // 단일 상품 조회 (삭제되지 않은 데이터)
     public ProductResponseDto getProduct(Long productId) {
-        // 상품 정보 조회
+        // 캐시에서 상품 정보 조회
         String key = RedisKeys.getProductCacheKey(productId);
         ProductResponseDto cachedProduct = (ProductResponseDto) redisTemplate.opsForValue().get(key);
 
@@ -119,10 +117,6 @@ public class ProductService {
         //관리자 권한 확인
         checkAdminRole(user);
 
-        BigDecimal price = requestDto.getPrice();
-        if (price.compareTo(MIN_PRICE) < 0) {
-            throw new CustomException(ErrorCode.INVALID_PRICE);
-        }
         Product product = getProductById(productId);
         product.update(requestDto);
         product.getInventory().updateStock(stock, product);
@@ -172,7 +166,6 @@ public class ProductService {
 
     private Product getProductById(Long productId) {
         return productRepository.findByIdWithInventory(productId)
-                .filter(product -> !product.isDeleted())
                 .orElseThrow(() -> new CustomException(ErrorCode.PRODUCT_NOT_FOUND));
     }
 

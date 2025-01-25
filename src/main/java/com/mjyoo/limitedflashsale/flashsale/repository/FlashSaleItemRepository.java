@@ -11,7 +11,7 @@ import java.util.Optional;
 
 public interface FlashSaleItemRepository extends JpaRepository<FlashSaleItem, Long> {
 
-    @Query("SELECT fsp FROM FlashSaleItem fsp JOIN FETCH fsp.flashSale fs WHERE fsp.product.id = :productId AND fs.status = 'ONGOING'")
+    @Query("SELECT fsp FROM FlashSaleItem fsp JOIN FETCH fsp.flashSale fs WHERE fsp.product.id = :productId AND fs.status = 'ACTIVE'")
     Optional<FlashSaleItem> findByProductIdAndFlashSaleStatus(@Param("productId") Long productId);
 
     boolean existsByFlashSaleAndProduct(FlashSale flashSale, Product product);

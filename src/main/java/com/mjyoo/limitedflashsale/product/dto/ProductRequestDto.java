@@ -1,10 +1,7 @@
 package com.mjyoo.limitedflashsale.product.dto;
 
 
-import jakarta.validation.constraints.Min;
-import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotNull;
-import jakarta.validation.constraints.Positive;
+import jakarta.validation.constraints.*;
 import lombok.Builder;
 import lombok.Getter;
 
@@ -17,7 +14,7 @@ public class ProductRequestDto {
     private String name;
 
     @NotNull(message = "Please enter the price.")
-    @Positive(message = "The price must be greater than $1.")
+    @DecimalMin(value = "1.00", message = "The price must be at least $1.")
     private BigDecimal price;
 
     @NotNull(message = "Please enter the stock.")

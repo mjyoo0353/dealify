@@ -81,7 +81,7 @@ public class FlashSaleService {
             throw new CustomException(ErrorCode.FLASH_SALE_NOT_SCHEDULED);
         }
         // 상품 조회
-        Product product = findProduct(requestDto.getProductId());
+        Product product = findByIdWithInventory(requestDto.getProductId());
 
         // 행사 상품 중복 확인
         boolean exists = flashSaleItemRepository.existsByFlashSaleAndProduct(flashSale, product);
@@ -90,7 +90,7 @@ public class FlashSaleService {
         }
 
         // 재고 확인
-        if (requestDto.getInitialStock() > product.getInventory().getStock()) {
+        if (requestDto.getStock() > product.getInventory().getStock()) {
             throw new CustomException(ErrorCode.OUT_OF_STOCK);
         }
 
@@ -104,7 +104,7 @@ public class FlashSaleService {
                 .originalPrice(originalPrice)
                 .discountRate(discountRate)
                 .discountedPrice(originalPrice.subtract(originalPrice.multiply(discountRate)))
-                .initialStock(requestDto.getInitialStock())
+                .initialStock(requestDto.getStock())
                 .status(FlashSaleItemStatus.AVAILABLE)
                 .build();
         flashSaleItemRepository.save(flashSaleItem);
@@ -133,7 +133,7 @@ public class FlashSaleService {
         // 행사 조회
         FlashSale flashSale = findFlashSale(flashSaleId);
         // 행사 진행중 또는 종료 시 삭제 불가
-        if (flashSale.getStatus().equals(FlashSaleStatus.ENDED) || flashSale.getStatus().equals(FlashSaleStatus.ONGOING)) {
+        if (flashSale.getStatus().equals(FlashSaleStatus.ENDED) || flashSale.getStatus().equals(FlashSaleStatus.ACTIVE)) {
             throw new CustomException(ErrorCode.INVALID_DELETE_FLASH_SALE);
         }
         flashSaleRepository.delete(flashSale);
@@ -145,7 +145,7 @@ public class FlashSaleService {
         // 관리자 권한 확인
         checkAdminRole(user);
         // DB 행사 상태 변경
-        updateFlashSaleStatus(flashSaleId, FlashSaleStatus.ONGOING);
+        updateFlashSaleStatus(flashSaleId, FlashSaleStatus.ACTIVE);
         log.info("Flash sale manually opened by admin: {}", flashSaleId);
     }
 
@@ -171,12 +171,12 @@ public class FlashSaleService {
     }
 
     private FlashSale findFlashSale(Long flashSaleId) {
-        return flashSaleRepository.findById(flashSaleId)
+        return flashSaleRepository.findByIdWithProducts(flashSaleId)
                 .orElseThrow(() -> new CustomException(ErrorCode.FLASH_SALE_NOT_FOUND));
     }
 
-    private Product findProduct(Long productId) {
-        return productRepository.findById(productId)
+    private Product findByIdWithInventory(Long productId) {
+        return productRepository.findByIdWithInventory(productId)
                 .orElseThrow(() -> new CustomException(ErrorCode.PRODUCT_NOT_FOUND));
     }
 

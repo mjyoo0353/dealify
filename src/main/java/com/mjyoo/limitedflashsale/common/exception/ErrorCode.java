@@ -9,60 +9,54 @@ import lombok.Getter;
 public enum ErrorCode {
 
     // User
-    USER_NOT_FOUND("해당 유저 정보를 찾을 수 없습니다."),
-    DUPLICATED_USERNAME("해당 유저네임은 이미 사용중입니다."),
-    DUPLICATED_EMAIL("해당 이메일은 이미 사용중입니다."),
-    INVALID_PASSWORD("비밀번호가 일치하지 않습니다."),
-    INVALID_ADMIN_TOKEN("관리자 토큰이 유효하지 않습니다. 올바른 토큰을 입력해주세요."),
+    USER_NOT_FOUND("User not found"),
+    DUPLICATED_USERNAME("Username already exists"),
+    DUPLICATED_EMAIL("Email already in use"),
+    INVALID_PASSWORD("Password does not match"),
+    INVALID_ADMIN_TOKEN("Invalid admin token"),
 
     // Product
-    PRODUCT_NOT_FOUND("해당 상품 정보를 찾을 수 없습니다."),
-    INVALID_PRICE("가격이 유효하지 않습니다. 최소 $1 이상의 가격을 입력해주세요."),
+    PRODUCT_NOT_FOUND("Product not found"),
 
     // Inventory
-    CONFLICT_UPDATE_STOCK("재고 처리 중 충돌이 발생했습니다. 다시 시도해주세요."),
+    CONFLICT_UPDATE_STOCK("Stock update conflict. Please try again."),
 
     // Order
-    ORDER_NOT_FOUND("해당 주문 정보를 찾을 수 없습니다."),
-    OUT_OF_STOCK("재고가 부족합니다."),
-    LOCK_ACQUISITION_FAILURE("재고 업데이트 락 획득 실패"),
-    INVALID_ORDER_STATUS("주문 상태가 유효하지 않습니다."),
-    ORDER_EXPIRED("주문이 만료되었습니다."),
+    ORDER_NOT_FOUND("Order not found"),
+    OUT_OF_STOCK("Item out of stock"),
+    LOCK_ACQUISITION_FAILURE("Failed to acquire stock lock"),
+    INVALID_ORDER_STATUS("Invalid order status"),
+    ORDER_EXPIRED("Order has expired"),
 
     // Cart
-    CART_NOT_FOUND("해당 장바구니 정보를 찾을 수 없습니다."),
-    CART_PRODUCT_NOT_FOUND("장바구니에 상품이 없습니다."),
-    INVALID_QUANTITY("수량이 유효하지 않습니다."),
+    CART_NOT_FOUND("Cart not found"),
+    CART_PRODUCT_NOT_FOUND("No items in cart"),
+    INVALID_QUANTITY("Invalid quantity"),
 
     // FlashSale
-    FLASH_SALE_NOT_FOUND("해당 이벤트 정보를 찾을 수 없습니다."),
-    FLASH_SALE_NOT_STARTED("행사 시작 시간이 아닙니다."),
-    FLASH_SALE_NOT_ENDED("행사 종료 시간이 아닙니다."),
-    FLASH_SALE_NOT_ONGOING("현재 행사가 진행 중이 아닙니다."),
-    INVALID_UPDATE_FLASH_SALE("종료된 행사는 수정이 불가합니다."),
-    INVALID_DELETE_FLASH_SALE("진행 중이거나 종료된 행사는 삭제가 불가합니다."),
-    FLASH_SALE_NOT_SCHEDULED("예정된 행사가 없습니다."),
-    PRODUCT_ALREADY_EXISTS("이미 등록된 상품입니다."),
+    FLASH_SALE_NOT_FOUND("Sale event not found"),
+    FLASH_SALE_NOT_STARTED("Sale has not started yet."),
+    FLASH_SALE_NOT_ENDED("Sale has not ended yet."),
+    FLASH_SALE_NOT_ACTIVE("No active sale event."),
+    INVALID_UPDATE_FLASH_SALE("Cannot update active or ended sale event."),
+    INVALID_DELETE_FLASH_SALE("Cannot delete active or ended sale event."),
+    FLASH_SALE_NOT_SCHEDULED("No upcoming sale event."),
+    PRODUCT_ALREADY_EXISTS("Product already added."),
 
     // Payment
-    PAYMENT_FAILED("결제에 실패하였습니다."),
+    PAYMENT_FAILED("Payment failed"),
 
     // Auth
-    INVALID_EMAIL_VERIFICATION("이메일 인증이 필요합니다."),
-    TOKEN_CREATION_ERROR("토큰 생성에 실패하였습니다."),
-    MISSING_REFRESH_TOKEN("리프레시 토큰이 없습니다."),
+    INVALID_EMAIL_VERIFICATION("Email verification required."),
+    TOKEN_CREATION_ERROR("Failed to create token."),
+    MISSING_REFRESH_TOKEN("Missing refresh token."),
 
     // Common
-    BAD_REQUEST("잘못된 요청입니다. 다시 시도해 주세요."), //400
-    INVALID_INPUT_VALUE("입력값이 올바르지 않습니다."), //400
-    METHOD_ARGUMENT_NOT_VALID("유효성 검사 실패"), //400
-    METHOD_TYPE_MISMATCH("파라미터 타입 불일치"), //400
-    UNAUTHORIZED("로그인이 필요합니다."), //401
-    FORBIDDEN("접근 권한이 없습니다."), //403
-    RESOURCE_NOT_FOUND("해당 정보를 찾을 수 없습니다."), //404
-    METHOD_NOT_ALLOWED("지원되지 않는 HTTP 메서드입니다."), //405
-    INTERNAL_SERVER_ERROR("예기치 못한 오류가 발생하였습니다."), //500
-    DUPLICATE_RESOURCE("데이터가 이미 존재합니다."); //409
+    BAD_REQUEST("Invalid request. Please try again."), //400
+    INVALID_INPUT_VALUE("Invalid input"), //400
+    UNAUTHORIZED("Login required"), //401
+    FORBIDDEN("Access denied"), //403
+    RESOURCE_NOT_FOUND("Resource not found"); //404
 
 
     private final String message;

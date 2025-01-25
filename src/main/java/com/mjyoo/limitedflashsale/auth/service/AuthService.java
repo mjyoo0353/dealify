@@ -1,7 +1,6 @@
 package com.mjyoo.limitedflashsale.auth.service;
 
 import com.mjyoo.limitedflashsale.auth.dto.LoginRequestDto;
-import com.mjyoo.limitedflashsale.auth.dto.LoginResponseDto;
 import com.mjyoo.limitedflashsale.auth.dto.RefreshTokenRequestDto;
 import com.mjyoo.limitedflashsale.auth.security.JwtUtil;
 import com.mjyoo.limitedflashsale.common.util.RedisKeys;
@@ -37,7 +36,7 @@ public class AuthService {
 
     //로그인
     @Transactional
-    public LoginResponseDto login(LoginRequestDto requestDto, HttpServletResponse response) {
+    public void login(LoginRequestDto requestDto, HttpServletResponse response) {
         //사용자 조회
         User user = userRepository.findByEmail(requestDto.getEmail())
                 .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
@@ -58,7 +57,6 @@ public class AuthService {
             jwtUtil.printTokenDetails(accessToken);
             jwtUtil.printTokenDetails(refreshToken);
 
-            return new LoginResponseDto(user.getEmail(), JwtUtil.BEARER_PREFIX + refreshToken);
         } catch (TokenCreationException e) {
             throw new CustomException(ErrorCode.TOKEN_CREATION_ERROR);
         }

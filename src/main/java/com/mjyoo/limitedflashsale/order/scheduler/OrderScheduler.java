@@ -8,6 +8,8 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
+
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -24,6 +26,7 @@ public class OrderScheduler {
      * 실행 주기: 1분마다
      */
     @Scheduled(cron = "${scheduler.order.sync-time}")
+    @Transactional
     public void processExpiredOrders() {
         log.info("Starting to process expired orders...");
         // 만료된 주문 조회

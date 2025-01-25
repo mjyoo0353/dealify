@@ -35,7 +35,7 @@ public class FlashSaleSchedulerService {
             throw new CustomException(ErrorCode.FLASH_SALE_NOT_STARTED);
         }
         // DB 상태 업데이트
-        updateFlashSaleStatus(flashSale, FlashSaleStatus.ONGOING);
+        updateFlashSaleStatus(flashSale, FlashSaleStatus.ACTIVE);
     }
 
     //행사 종료 (자동 스케줄링용)
@@ -44,7 +44,7 @@ public class FlashSaleSchedulerService {
         // 상태 검증
         FlashSale flashSale = findFlashSale(flashSaleId);
 
-        if (flashSale.getStatus() != FlashSaleStatus.ONGOING && !flashSale.getEndTime().isBefore(LocalDateTime.now())) {
+        if (flashSale.getStatus() != FlashSaleStatus.ACTIVE && !flashSale.getEndTime().isBefore(LocalDateTime.now())) {
             throw new CustomException(ErrorCode.FLASH_SALE_NOT_ENDED);
         }
         // DB 상태 업데이트
@@ -69,7 +69,7 @@ public class FlashSaleSchedulerService {
     @Transactional(readOnly = true)
     public List<Long> getClosedFlashSales() {
         LocalDateTime now = LocalDateTime.now();
-        List<FlashSale> closedSales = flashSaleRepository.findByStatusAndEndTimeLessThanEqual(FlashSaleStatus.ONGOING, now);
+        List<FlashSale> closedSales = flashSaleRepository.findByStatusAndEndTimeLessThanEqual(FlashSaleStatus.ACTIVE, now);
 
         List<Long> scheduledSaleIds = new ArrayList<>();
         for (FlashSale flashSale : closedSales) {

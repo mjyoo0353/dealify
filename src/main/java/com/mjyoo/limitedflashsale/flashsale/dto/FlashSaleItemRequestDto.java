@@ -23,5 +23,5 @@ public class FlashSaleItemRequestDto {
 
     @NotNull
     @Min(1)
-    private Integer initialStock;
+    private Integer stock;
 }
