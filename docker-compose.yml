@@ -1,20 +1,68 @@
 services: #컨테이너 목록
-
-  myapp:
+  myapp1:
     image: ecommerce-app:latest
-    container_name: myapp
-    #restart: always
+    container_name: myapp1
     build:
       context: .   #현재 디렉토리에서 빌드
       dockerfile: Dockerfile
     ports:
       - "8081:8080" #로컬 8081 포트와 컨테이너 내의 8080 포트를 매핑
     depends_on:
-      - mysql #mysql 서비스에 의존
-      - redis #redis 서비스에 의존
-
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - my-network
     environment:
-      SPRING_DATABASE_URL: jdbc:mysql://mysql-db:3306/ecommerce_db
+      SPRING_JPA_HIBERNATE_DDL_AUTO: update
+      SPRING_DATABASE_URL: jdbc:mysql://mysql:3306/ecommerce_db
+      SPRING_DATABASE_USERNAME: ${DB_USERNAME}
+      SPRING_DATABASE_PASSWORD: ${DB_PASSWORD}
+      SPRING_REDIS_HOST: redis
+      SPRING_REDIS_PORT: 6379
+
+  myapp2:
+    image: ecommerce-app:latest
+    container_name: myapp2
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "8082:8080"
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - my-network
+    environment:
+      SPRING_JPA_HIBERNATE_DDL_AUTO: none
+      SPRING_DATABASE_URL: jdbc:mysql://mysql:3306/ecommerce_db
+      SPRING_DATABASE_USERNAME: ${DB_USERNAME}
+      SPRING_DATABASE_PASSWORD: ${DB_PASSWORD}
+      SPRING_REDIS_HOST: redis
+      SPRING_REDIS_PORT: 6379
+
+  myapp3:
+    image: ecommerce-app:latest
+    container_name: myapp3
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "8083:8080"
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - my-network
+    environment:
+      SPRING_JPA_HIBERNATE_DDL_AUTO: none
+      SPRING_DATABASE_URL: jdbc:mysql://mysql:3306/ecommerce_db
       SPRING_DATABASE_USERNAME: ${DB_USERNAME}
       SPRING_DATABASE_PASSWORD: ${DB_PASSWORD}
       SPRING_REDIS_HOST: redis
@@ -22,7 +70,7 @@ services: #컨테이너 목록
 
   mysql:
     image: mysql:8.0
-    container_name: mysql-db
+    container_name: mysql
     restart: always
     ports:
       - "3308:3306" #로컬 3308 포트와 컨테이너 내의 3306 포트를 매핑
@@ -31,15 +79,48 @@ services: #컨테이너 목록
     environment:
       MYSQL_DATABASE: ecommerce_db
       MYSQL_ROOT_PASSWORD: ${DB_PASSWORD}
+    healthcheck:
+      test: [ "CMD", "mysqladmin", "ping", "-h", "localhost" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - my-network
+
+  # Nginx 로드밸런서
+  nginx:
+    image: nginx:latest
+    container_name: nginx
+    ports:
+      - "80:80"
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./logs:/var/log/nginx
+    depends_on:
+      - myapp1
+      - myapp2
+      - myapp3
+    networks:
+      - my-network
 
   redis:
     image: redis:latest
     container_name: redis
-    hostname: redis
     ports:
       - 6379:6379 # Redis 기본 포트
-    volumes:
-      - ./redis/data:/data
+#    volumes:
+#      - ./redis/data:/data
+    networks:
+      - my-network
+    healthcheck:
+      test: [ "CMD", "redis-cli", "ping" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
 volumes:
   mysql_data:
+
+networks:
+  my-network:
+    driver: bridge
