@@ -3,7 +3,7 @@ package com.mjyoo.limitedflashsale.order.scheduler;
 import com.mjyoo.limitedflashsale.order.entity.Order;
 import com.mjyoo.limitedflashsale.order.entity.OrderStatus;
 import com.mjyoo.limitedflashsale.order.repository.OrderRepository;
-import com.mjyoo.limitedflashsale.order.service.OrderService;
+import com.mjyoo.limitedflashsale.product.service.InventoryService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -19,7 +19,7 @@ import java.util.List;
 public class OrderScheduler {
 
     private final OrderRepository orderRepository;
-    private final OrderService orderService;
+    private final InventoryService inventoryService;
 
     /**
      * 만료된 주문 처리 스케줄러
@@ -33,7 +33,8 @@ public class OrderScheduler {
         List<Order> expiredOrders = orderRepository.findByStatusAndExpiryTimeBefore(OrderStatus.ORDER_PROCESSING, LocalDateTime.now());
         for (Order order : expiredOrders) {
             try {
-                orderService.processSingleOrder(order);
+                inventoryService.restoreStock(order.getOrderItemList());
+                orderRepository.delete(order);
                 log.info("Expired order processed - orderId: {}", order.getId());
             } catch (Exception e) {
                 log.error("Error processing expired order - orderId: {}", order.getId(), e);

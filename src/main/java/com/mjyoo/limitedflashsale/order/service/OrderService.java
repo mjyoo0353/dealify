@@ -4,7 +4,6 @@ import com.mjyoo.limitedflashsale.cart.dto.CartRequestDto;
 import com.mjyoo.limitedflashsale.cart.entity.Cart;
 import com.mjyoo.limitedflashsale.cart.entity.CartItem;
 import com.mjyoo.limitedflashsale.cart.repository.CartRepository;
-import com.mjyoo.limitedflashsale.common.util.RedisKeys;
 import com.mjyoo.limitedflashsale.common.exception.CustomException;
 import com.mjyoo.limitedflashsale.common.exception.ErrorCode;
 import com.mjyoo.limitedflashsale.flashsale.entity.FlashSale;
@@ -30,14 +29,13 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Slice;
-import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.TimeUnit;
 
 
 @Slf4j
@@ -52,7 +50,6 @@ public class OrderService {
     private final FlashSaleItemRepository flashSaleItemRepository;
     private final FlashSaleRepository flashSaleRepository;
     private final InventoryService inventoryService;
-    private final RedisTemplate<String, Object> redisTemplate;
 
     //주문 내역 상세 조회
     public OrderResponseDto getOrder(Long orderId, User user) {
@@ -71,25 +68,22 @@ public class OrderService {
         //주문한 목록을 순회하고
         for (Order order : orderList) {
             //주문 정보를 OrderResponseDto로 변환하여 리스트에 추가
-            OrderResponseDto orderResponseDto = new OrderResponseDto(order);
-            orderInfoList.add(orderResponseDto);
+            orderInfoList.add(new OrderResponseDto(order));
         }
 
         long totalOrderCount = orderRepository.countAllByUserId(user.getId());
 
-        Long nextCursor = orderList.hasNext() ? orderInfoList.get(orderInfoList.size() - 1).getId() : null;
+        Long nextCursor = orderList.hasNext() && !orderInfoList.isEmpty() ? orderInfoList.get(orderInfoList.size() - 1).getId() : null;
         return new OrderListResponseDto(orderInfoList, totalOrderCount, nextCursor);
     }
 
     //주문 생성 (단일 상품)
     @Transactional
     public Long createOrder(OrderRequestDto requestDto, User user) {
-        // 상품 조회
-        Product product = findActiveProduct(requestDto.getProductId());
+        // 상품/재고 조회
+        Product product = findActiveProductWithInventory(requestDto.getProductId());
         int quantity = requestDto.getQuantity();
-
-        //재고 확인 및 차감
-        inventoryService.validateAndDecreaseStock(product.getId(), quantity);
+        inventoryService.decreaseStock(product, quantity);
 
         BigDecimal priceToApply;
         boolean isFlashSaleItem = false;
@@ -113,9 +107,6 @@ public class OrderService {
         // 주문 상품 리스트에 단일 상품 추가
         order.getOrderItemList().add(orderItem);
         orderItemRepository.save(orderItem);
-
-        // 레디스 임시 주문 정보 저장 및 만료 TTL 설정 (5분)
-        cacheTemporaryOrder(order);
 
         return order.getId();
     }
@@ -144,9 +135,9 @@ public class OrderService {
             }
 
             //상품 조회
-            Product product = findActiveProduct(productId);
-            //재고 확인 및 차감
-            inventoryService.validateAndDecreaseStock(product.getId(), quantity);
+            Product product = findActiveProductWithInventory(productId);
+            //재고 차감 및 레디스 재고 업데이트
+            inventoryService.decreaseStock(product, quantity);
 
             BigDecimal priceToApply;
             boolean isFlashSaleItem = false;
@@ -176,9 +167,6 @@ public class OrderService {
         orderItemRepository.saveAll(orderItemList);
         cartRepository.save(cart);
 
-        // 레디스 임시 주문 정보 저장 및 만료 TTL 설정 (5분)
-        cacheTemporaryOrder(order);
-
         return order.getId();
     }
 
@@ -194,32 +182,26 @@ public class OrderService {
 
         // 주문 취소 권한 확인
         findOrderByUser(user, order);
-        // 주문 상태 변경
+        // 주문/결제 상태 변경
         order.updateStatus(OrderStatus.CANCELED);
-        // 결제 상태 변경
         order.getPayment().setStatus(PaymentStatus.CANCELED);
 
         //취소된 주문에 대한 모든 상품 처리
-        for (OrderItem orderItem : order.getOrderItemList()) {
-            Product product = orderItem.getProduct();
-            //취소된 상품 수량 재고에 추가
-            product.getInventory().restoreStock(orderItem.getQuantity());
-        }
+        inventoryService.restoreStock(order.getOrderItemList());
         orderRepository.save(order);
     }
 
-    /// -------------------------------------------- private method -------------------------------------------- ///
+/// -------------------------------------------- private method -------------------------------------------- ///
 
     // 삭제되지 않은 상품 조회
-    private Product findActiveProduct(Long productId) {
-        return productRepository.findById(productId)
-                .filter(prod -> !prod.isDeleted())
+    private Product findActiveProductWithInventory(Long productId) {
+        return productRepository.findByIdWithInventory(productId)
                 .orElseThrow(() -> new CustomException(ErrorCode.PRODUCT_NOT_FOUND));
     }
 
     //주문 조회
     private Order findOrderById(Long orderId) {
-        return orderRepository.findById(orderId)
+        return orderRepository.findByIdWithCheck(orderId)
                 .orElseThrow(() -> new CustomException(ErrorCode.ORDER_NOT_FOUND));
     }
 
@@ -232,13 +214,7 @@ public class OrderService {
 
     //주문 리스트 조회
     private Slice<Order> findOrdersByCursor(User user, Long cursor, PageRequest pageRequest) {
-        Slice<Order> orderList;
-        if (cursor == null || cursor == 0) {
-            orderList = orderRepository.findByUserId(user.getId(), pageRequest);
-        } else {
-            orderList = orderRepository.findByUserIdAndIdLessThan(user.getId(), cursor, pageRequest);
-        }
-        return orderList;
+        return orderRepository.findByUserIdAndCursor(user.getId(), cursor, pageRequest);
     }
 
     //유저 장바구니 조회
@@ -253,12 +229,6 @@ public class OrderService {
                 .filter(cp -> cp.getProduct().getId().equals(productId))
                 .findAny()
                 .orElseThrow(() -> new CustomException(ErrorCode.CART_PRODUCT_NOT_FOUND));
-    }
-
-    // 레디스 주문 정보 저장 및 만료 TTL 설정 (5분)
-    private void cacheTemporaryOrder(Order order) {
-        String orderTimeoutKey = RedisKeys.getTempOrderKey(order.getId());
-        redisTemplate.opsForValue().set(orderTimeoutKey, order.getId(), 5, TimeUnit.MINUTES);
     }
 
     //주문 Entity 생성
@@ -304,8 +274,8 @@ public class OrderService {
             }
 
             // 행사 상품이 ONGOING 상태인지 확인
-            if (!FlashSaleStatus.ONGOING.equals(flashSale.getStatus())) {
-                throw new CustomException(ErrorCode.FLASH_SALE_NOT_ONGOING);
+            if (!FlashSaleStatus.ACTIVE.equals(flashSale.getStatus())) {
+                throw new CustomException(ErrorCode.FLASH_SALE_NOT_ACTIVE);
             }
 
             //재고가 없으면 상태 변경
@@ -321,15 +291,4 @@ public class OrderService {
         return null;
     }
 
-    // OrderScheduler 클래스 만료된 주문 처리 메서드
-    @Transactional
-    public void processSingleOrder(Order order) {
-        // DB 주문 취소 처리
-        order.updateStatus(OrderStatus.TIMEOUT);
-        orderRepository.save(order);
-        // Redis 주문 정보 삭제
-        redisTemplate.delete(RedisKeys.getTempOrderKey(order.getId()));
-        // 재고 복원
-        inventoryService.restoreStock(order);
-    }
 }
