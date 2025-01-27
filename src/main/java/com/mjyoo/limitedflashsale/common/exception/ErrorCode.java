@@ -17,6 +17,8 @@ public enum ErrorCode {
 
     // Product
     PRODUCT_NOT_FOUND("Product not found"),
+    INSUFFICIENT_STOCK("Insufficient stock"),
+    INVALID_STOCK("Invalid stock"),
 
     // Inventory
     CONFLICT_UPDATE_STOCK("Stock update conflict. Please try again."),

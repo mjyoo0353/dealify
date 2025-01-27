@@ -1,6 +1,8 @@
 package com.mjyoo.limitedflashsale.product.entity;
 
 import com.mjyoo.limitedflashsale.common.entity.Timestamped;
+import com.mjyoo.limitedflashsale.common.exception.CustomException;
+import com.mjyoo.limitedflashsale.common.exception.ErrorCode;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Getter;
@@ -30,7 +32,7 @@ public class Inventory extends Timestamped {
 
     public void updateStock(int stock, Product product) {
         if(stock == 0){
-            throw new IllegalArgumentException("상품의 재고는 1개 이상이어야 합니다.");
+            throw new CustomException(ErrorCode.INVALID_STOCK);
         }
         this.stock = stock;
         this.product = product;
@@ -38,7 +40,7 @@ public class Inventory extends Timestamped {
 
     public void decreaseStock(int quantity) {
         if (quantity > this.stock) {
-            throw new IllegalArgumentException("재고가 부족합니다.");
+            throw new CustomException(ErrorCode.INSUFFICIENT_STOCK);
         }
         this.stock -= quantity;
     }
