@@ -28,8 +28,9 @@ public class FlashSaleController {
 
     // 행사 목록 조회
     @GetMapping("/flash-sales")
-    public ResponseEntity<ApiResponse<?>> getFlashSaleList() {
-        FlashSaleListResponseDto flashSaleList = flashSaleService.getFlashSaleList();
+    public ResponseEntity<ApiResponse<?>> getFlashSaleList(@RequestParam(value = "cursor", required = false, defaultValue = "0") Long cursor,
+                                                           @RequestParam(value = "size", defaultValue = "10") int size) {
+        FlashSaleListResponseDto flashSaleList = flashSaleService.getFlashSaleList(cursor, size);
         return ResponseEntity.ok(ApiResponse.success(flashSaleList));
     }
 

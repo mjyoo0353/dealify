@@ -17,6 +17,8 @@ import com.mjyoo.limitedflashsale.user.entity.UserRoleEnum;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Slice;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -35,20 +37,22 @@ public class FlashSaleService {
 
     //행사 조회
     public FlashSaleResponseDto getFlashSaleDetail(Long flashSaleId) {
-        FlashSale flashSale = findFlashSale(flashSaleId);
+        FlashSale flashSale = findFlashSaleWithProduct(flashSaleId);
         return new FlashSaleResponseDto(flashSale);
     }
 
     //행사 목록 조회
-    public FlashSaleListResponseDto getFlashSaleList() {
-        List<FlashSale> flashSaleList = flashSaleRepository.findAll();
+    public FlashSaleListResponseDto getFlashSaleList(Long cursor, int size) {
+        PageRequest pageRequest = PageRequest.of(0, size);
+        Slice<FlashSale> flashSaleList = flashSaleRepository.findAllWithProductsAndCursor(cursor, pageRequest);
 
         List<FlashSaleResponseDto> flashSaleInfoList = new ArrayList<>();
         for (FlashSale flashSale : flashSaleList) {
-            FlashSaleResponseDto flashSaleResponseDto = new FlashSaleResponseDto(flashSale);
-            flashSaleInfoList.add(flashSaleResponseDto);
+            flashSaleInfoList.add(new FlashSaleResponseDto(flashSale));
         }
-        return new FlashSaleListResponseDto(flashSaleInfoList);
+
+        Long nextCursor = flashSaleList.hasNext() && !flashSaleList.isEmpty() ? flashSaleInfoList.get(flashSaleInfoList.size() - 1).getId() : null;
+        return new FlashSaleListResponseDto(flashSaleInfoList, nextCursor);
     }
 
     //행사 생성
@@ -74,7 +78,7 @@ public class FlashSaleService {
     public void addFlashSaleItem(Long flashSaleId, @Valid FlashSaleItemRequestDto requestDto, User user) {
         // 관리자 권한 확인
         checkAdminRole(user);
-        // 행사 상품 생성 및 저장
+        // 행사 조회
         FlashSale flashSale = findFlashSale(flashSaleId);
         // 행사 시작 전에만 상품 추가 가능
         if (flashSale.getStatus() != FlashSaleStatus.SCHEDULED) {
@@ -161,6 +165,32 @@ public class FlashSaleService {
 
     /// -------------------------------------------- private method -------------------------------------------- ///
 
+    // 행사 조회용 - 행사정보만 필요할때 사용
+    private FlashSale findFlashSale(Long flashSaleId) {
+        return flashSaleRepository.findById(flashSaleId)
+                .orElseThrow(() -> new CustomException(ErrorCode.FLASH_SALE_NOT_FOUND));
+    }
+
+    // 행사 조회용 - 행사정보+상품정보가 둘다 필요할때 사용
+    private FlashSale findFlashSaleWithProduct(Long flashSaleId) {
+        return flashSaleRepository.findByIdWithProducts(flashSaleId)
+                .orElseThrow(() -> new CustomException(ErrorCode.FLASH_SALE_NOT_FOUND));
+    }
+
+    // 상품 조회용 - 재고정보까지 필요할때 사용
+    private Product findByIdWithInventory(Long productId) {
+        return productRepository.findByIdWithInventory(productId)
+                .orElseThrow(() -> new CustomException(ErrorCode.PRODUCT_NOT_FOUND));
+    }
+
+    // 관리자 권한 확인
+    private void checkAdminRole(User user) {
+        if (user == null && !user.getRole().equals(UserRoleEnum.ADMIN)) {
+            throw new CustomException(ErrorCode.FORBIDDEN);
+        }
+    }
+
+
     // DB 행사 상태 업데이트
     private void updateFlashSaleStatus(Long flashSaleId, FlashSaleStatus status) {
         // 행사 상품 조회
@@ -169,21 +199,4 @@ public class FlashSaleService {
         flashSale.updateStatus(status);
         flashSaleRepository.save(flashSale);
     }
-
-    private FlashSale findFlashSale(Long flashSaleId) {
-        return flashSaleRepository.findByIdWithProducts(flashSaleId)
-                .orElseThrow(() -> new CustomException(ErrorCode.FLASH_SALE_NOT_FOUND));
-    }
-
-    private Product findByIdWithInventory(Long productId) {
-        return productRepository.findByIdWithInventory(productId)
-                .orElseThrow(() -> new CustomException(ErrorCode.PRODUCT_NOT_FOUND));
-    }
-
-    private void checkAdminRole(User user) {
-        if (user == null && !user.getRole().equals(UserRoleEnum.ADMIN)) {
-            throw new CustomException(ErrorCode.FORBIDDEN);
-        }
-    }
-
 }

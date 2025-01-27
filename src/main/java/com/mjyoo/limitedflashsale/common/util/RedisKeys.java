@@ -7,6 +7,7 @@ public class RedisKeys {
     private static final String REFRESH_TOKEN = "refresh_token:";
     private static final String SIGNUP_CODE = "signup_code:";
     private static final String SIGNUP_CODE_CHECK = ":verified";
+    private static final String INVENTORY_LOCK = "inventory_lock:";
 
     public static String getTempOrderKey(Long orderId) {
         return TEMP_ORDER_CACHE_KEY + orderId;
@@ -30,5 +31,9 @@ public class RedisKeys {
 
     public static String getSignupCodeCheck(String email) {
         return SIGNUP_CODE + email + SIGNUP_CODE_CHECK;
+    }
+
+    public static String getInventoryLockKey(Long productId) {
+        return INVENTORY_LOCK + productId;
     }
 }

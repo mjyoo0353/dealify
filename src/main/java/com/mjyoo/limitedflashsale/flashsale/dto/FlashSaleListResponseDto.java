@@ -7,8 +7,10 @@ import java.util.List;
 @Getter
 public class FlashSaleListResponseDto {
     private List<FlashSaleResponseDto> flashSaleInfoList;
+    private Long nextCursor;
 
-    public FlashSaleListResponseDto(List<FlashSaleResponseDto> flashSaleInfoList) {
+    public FlashSaleListResponseDto(List<FlashSaleResponseDto> flashSaleInfoList, Long nextCursor) {
         this.flashSaleInfoList = flashSaleInfoList;
+        this.nextCursor = nextCursor;
     }
 }
