@@ -32,7 +32,7 @@ public class ProductService {
     private final RedisTemplate<String, Object> redisTemplate;
     private final InventoryService inventoryService;
 
-    // 단일 상품 조회 (삭제되지 않은 데이터)
+    // 단건 Active 상품 조회 (재고 정보 포함)
     public ProductResponseDto getProduct(Long productId) {
         // 캐시에서 상품 정보 조회
         String key = RedisKeys.getProductCacheKey(productId);
@@ -55,7 +55,7 @@ public class ProductService {
         return new ProductResponseDto(product);
     }
 
-    // 상품 목록 조회 (Active 상품만 조회)
+    // Active 상품 목록 조회
     public ProductListResponseDto getActiveProductList(Long cursor, int size) {
 
         PageRequest pageRequest = PageRequest.of(0, size);
@@ -145,23 +145,11 @@ public class ProductService {
     }
 
     private Slice<Product> getProductsByCursor(Long cursor, PageRequest pageRequest) {
-        Slice<Product> productList;
-        if (cursor == null || cursor == 0) { // cursor가 없을 경우, 최신 상품 조회
-            productList = productRepository.findActiveProducts(pageRequest);
-        } else { // cursor가 있을 경우, cursor 기준으로 이전 상품 조회
-            productList = productRepository.findActiveProductsAndIdLessThan(cursor, pageRequest);
-        }
-        return productList;
+        return productRepository.findActiveProductsAndCursor(cursor, pageRequest);
     }
 
     private Slice<Product> getDeletedProductsByCursor(Long cursor, PageRequest pageRequest) {
-        Slice<Product> productList;
-        if (cursor == null || cursor == 0) { // cursor가 없을 경우, 최신 상품 조회
-            productList = productRepository.findDeletedProducts(pageRequest);
-        } else { // cursor가 있을 경우, cursor 기준으로 이전 상품 조회
-            productList = productRepository.findDeletedProductsAndIdLessThan(cursor, pageRequest);
-        }
-        return productList;
+        return productRepository.findDeletedProductsAndCursor(cursor, pageRequest);
     }
 
     private Product getProductById(Long productId) {
