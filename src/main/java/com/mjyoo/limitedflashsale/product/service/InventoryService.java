@@ -3,8 +3,7 @@ package com.mjyoo.limitedflashsale.product.service;
 import com.mjyoo.limitedflashsale.common.util.RedisKeys;
 import com.mjyoo.limitedflashsale.common.exception.CustomException;
 import com.mjyoo.limitedflashsale.common.exception.ErrorCode;
-import com.mjyoo.limitedflashsale.order.entity.Order;
-import com.mjyoo.limitedflashsale.order.entity.OrderProduct;
+import com.mjyoo.limitedflashsale.order.entity.OrderItem;
 import com.mjyoo.limitedflashsale.product.entity.Inventory;
 import com.mjyoo.limitedflashsale.product.entity.Product;
 import com.mjyoo.limitedflashsale.product.repository.InventoryRepository;
@@ -19,6 +18,7 @@ import org.springframework.retry.annotation.Retryable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 @Slf4j
@@ -29,6 +29,14 @@ public class InventoryService {
     public final ProductRepository productRepository;
     public final InventoryRepository inventoryRepository;
     private final RedisTemplate<String, Object> redisTemplate;
+    private final RedissonClient redissonClient;
+
+
+    // 초기 재고 설정 메서드
+    public void setStock(Long productId, int stock) {
+        // Redis에 초기 재고 설정
+        redisTemplate.opsForValue().set(RedisKeys.getInventoryCacheKey(productId), stock);
+    }
 
     // 재고 조회용 - DB 조회 및 캐시 갱신
     @Transactional(readOnly = true)
@@ -50,79 +58,98 @@ public class InventoryService {
         return stock;
     }
 
-    // 캐시 재고 조회 전용
+    // 캐시 재고 조회
     public Integer getStockFromCache(Long productId) {
         String key = RedisKeys.getInventoryCacheKey(productId);
         return (Integer) redisTemplate.opsForValue().get(key);
     }
 
-    // 재고 감소 로직 (비관적 락 사용)
     @Transactional
-    public void validateAndDecreaseStock(Long productId, int quantity) {
-        // 캐시에서 먼저 재고 조회
-        Integer cachedStock = getStockFromCache(productId);
-        if (cachedStock != null && cachedStock < quantity) {
-            throw new CustomException(ErrorCode.OUT_OF_STOCK);
-        }
-
-        // DB 재고 조회 및 락 획득
-        Inventory inventory = inventoryRepository.findByProductIdWithPessimisticLock(productId)
-                .orElseThrow(() -> new CustomException(ErrorCode.PRODUCT_NOT_FOUND));
-
-        // 락 획득 후 실제 재고 검증
-        if (inventory.getStock() < quantity) {
-            throw new CustomException(ErrorCode.OUT_OF_STOCK);
-        }
-        // 재고 감소
-        inventory.decreaseStock(quantity);
-
-        // Redis 재고 캐시 업데이트
-        updateStockInRedis(productId, inventory.getStock());
-    }
-
-    // 재고 복원
-    @Retryable(maxAttempts = 3, backoff = @Backoff(delay = 1000, multiplier = 2))
-    @Transactional
-    public void restoreStock(Order order) {
-        log.warn("재고 복원 대상 주문 ID: " + order.getId());
+    public void decreaseStock(Product product, int quantity) {
+        // Redisson으로 분산 락 획득 시도
+        RLock lock = redissonClient.getLock(RedisKeys.getInventoryLockKey(product.getId()));
 
         try {
-            for (OrderProduct orderProduct : order.getOrderProductList()) {
-                // 주문 상품 조회
-                Product product = productRepository.findByIdWithInventory(orderProduct.getProduct().getId())
-                        .orElseThrow(() -> new CustomException(ErrorCode.PRODUCT_NOT_FOUND));
-
-                log.warn("재고 복원: " + product.getName() + ", 수량: " + orderProduct.getQuantity());
-                // DB 재고 복원
-                product.getInventory().restoreStock(orderProduct.getQuantity());
-                productRepository.save(product);
-
-                // Redis 재고 업데이트
-                String key = RedisKeys.getInventoryCacheKey(product.getId());
-                int ttl = calculateTTL(product.getInventory().getStock());
-                redisTemplate.opsForValue().set(key, product.getInventory().getStock(), ttl, TimeUnit.MINUTES);
-
-                log.warn("복원된 재고 수량: " + product.getInventory().getStock());
+            // 락 획득 시도 (최대 3초 대기, 10초 점유) - 타임아웃으로 무한 대기 방지
+            boolean isLocked = lock.tryLock(3, 10, TimeUnit.SECONDS);
+            if (!isLocked) {
+                throw new CustomException(ErrorCode.LOCK_ACQUISITION_FAILURE);
             }
-        } catch (Exception e) {
-            log.error("재고 복원 실패 - 주문 ID: " + order.getId(), e);
-            throw e;
+
+            // DB 재고 감소 처리
+            product.getInventory().decreaseStock(quantity);
+
+            // 재고 감소 처리 캐시에도 업데이트
+            String key = RedisKeys.getInventoryCacheKey(product.getId());
+            Long currentStock = redisTemplate.opsForValue().decrement(key, quantity);
+
+            // 재고 부족 시 롤백
+            if (currentStock < 0) {
+                redisTemplate.opsForValue().increment(key, quantity);
+                throw new CustomException(ErrorCode.INSUFFICIENT_STOCK);
+            }
+
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new RuntimeException("Lock acquisition interrupted", e);
+        } finally {
+            if (lock.isHeldByCurrentThread()) {
+                lock.unlock();
+            }
         }
     }
 
-    // 재고 업데이트
+    // 재고 복원 - 시간 만료 주문 처리, 주문 취소, PaymentService 결제 실패/오류 시 사용
+    @Retryable(maxAttempts = 3, backoff = @Backoff(delay = 1000, multiplier = 2))
+    @Transactional
+    public void restoreStock(List<OrderItem> orderItems) {
+        for (OrderItem orderItem : orderItems) {
+            restoreStockWithLock(orderItem);
+        }
+    }
+
+    private void restoreStockWithLock(OrderItem orderItem) {
+        // 분산 락 획득
+        String lockKey = RedisKeys.getStockRestoreKey(orderItem.getProduct().getId());
+        RLock lock = redissonClient.getLock(lockKey);
+
+        try {
+            boolean isLocked = lock.tryLock(3, 10, TimeUnit.SECONDS);
+            if (!isLocked) {
+                throw new CustomException(ErrorCode.LOCK_ACQUISITION_FAILURE);
+            }
+
+            // 주문 상품 조회
+            Product product = productRepository.findByIdWithInventory(orderItem.getProduct().getId())
+                    .orElseThrow(() -> new CustomException(ErrorCode.PRODUCT_NOT_FOUND));
+
+            // DB 재고 복원
+            int restoredQuantity = orderItem.getQuantity();
+            product.getInventory().restoreStock(restoredQuantity);
+            productRepository.save(product);
+
+            // Redis 재고 업데이트
+            String key = RedisKeys.getInventoryCacheKey(product.getId());
+            redisTemplate.opsForValue().increment(key, restoredQuantity);
+
+            log.info("Restored stock for product: {}. Quantity: {}, Current stock: {}",
+                    product.getId(), restoredQuantity, product.getInventory().getStock());
+
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new CustomException(ErrorCode.LOCK_ACQUISITION_FAILURE);
+        }
+    }
+
+    // 재고 업데이트 - 주문 생성, 상품 수정에서 사용
     @Retryable(maxAttempts = 3, backoff = @Backoff(delay = 1000, multiplier = 2))
     @Transactional
     public void updateStockInRedis(Long productId, int newStock) {
         String key = RedisKeys.getInventoryCacheKey(productId);
         try {
-            int ttl = calculateTTL(newStock);
-            redisTemplate.opsForValue().set(key, newStock, ttl, TimeUnit.MINUTES);
-            log.info("재고 캐시 업데이트 - 상품 ID: {}, 재고: {}, TTL: {}분", productId, newStock, ttl);
+            redisTemplate.opsForValue().setIfPresent(key, newStock);
         } catch (Exception e) {
-            redisTemplate.delete(key);
-            log.error("재고 캐시 업데이트 실패 - 상품 ID: {}, 재고: {}", productId, newStock);
-            throw e;
+            throw new CustomException(ErrorCode.REDIS_UPDATE_FAILED);
         }
     }
 

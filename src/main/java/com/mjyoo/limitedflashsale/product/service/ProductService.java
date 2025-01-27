@@ -45,7 +45,7 @@ public class ProductService {
         // Cache Miss 처리 - DB 조회 후 캐시 저장
         Product product = getProductById(productId);
         ProductResponseDto productResponseDto = new ProductResponseDto(product);
-        redisTemplate.opsForValue().setIfAbsent(key, productResponseDto, 10, TimeUnit.MINUTES);
+        redisTemplate.opsForValue().setIfAbsent(key, productResponseDto);
 
         return productResponseDto;
     }
@@ -108,6 +108,8 @@ public class ProductService {
 
         Product product = new Product(requestDto, stock);
         productRepository.save(product);
+
+        inventoryService.setStock(product.getId(), stock);
         return new ProductResponseDto(product);
     }
 
@@ -141,6 +143,7 @@ public class ProductService {
 
         Product product = getProductById(productId);
         product.updateToDelete(true); // soft delete 상태로 변경
+        redisTemplate.delete(RedisKeys.getInventoryCacheKey(productId));
         productRepository.save(product);
     }
 

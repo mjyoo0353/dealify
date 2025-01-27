@@ -55,7 +55,7 @@ public class PaymentService {
 
             // 결제 실패 시 재고 복원
             if (!success) {
-                inventoryService.restoreStock(order);
+                inventoryService.restoreStock(order.getOrderItemList());
             }
 
             // Redis 임시 주문 정보 삭제
@@ -69,7 +69,7 @@ public class PaymentService {
         } catch (Exception e) {
             // 에러 발생 시 재고 복원
             log.error("Error processing payment - orderId: {}", orderId, e);
-            inventoryService.restoreStock(order);
+            inventoryService.restoreStock(order.getOrderItemList());
             throw e;
         }
     }
@@ -99,7 +99,8 @@ public class PaymentService {
 
     private boolean simulatePayment() {
         // 20% 확률로 결제 실패 시뮬레이션
-        return Math.random() >= 0.2;
+        //return Math.random() >= 0.2;
+        return true;
     }
 
 }

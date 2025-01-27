@@ -72,7 +72,7 @@ public class ProductController {
     //상품 수정
     @PutMapping("/product/{productId}")
     public ResponseEntity<?> updateProduct(@PathVariable Long productId,
-                                           @RequestBody ProductRequestDto requestDto,
+                                           @Valid @RequestBody ProductRequestDto requestDto,
                                            @AuthenticationPrincipal UserDetailsImpl userDetails) {
         User user = userDetails.getUser();
         ProductResponseDto productResponseDto = productService.updateProduct(productId, requestDto, requestDto.getStock(), user);
