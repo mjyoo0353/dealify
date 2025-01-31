@@ -3,9 +3,9 @@ package com.mjyoo.limitedflashsale.product.service;
 import com.mjyoo.limitedflashsale.common.util.RedisKeys;
 import com.mjyoo.limitedflashsale.common.exception.CustomException;
 import com.mjyoo.limitedflashsale.common.exception.ErrorCode;
-import com.mjyoo.limitedflashsale.product.dto.ProductRequestDto;
-import com.mjyoo.limitedflashsale.product.dto.ProductListResponseDto;
-import com.mjyoo.limitedflashsale.product.dto.ProductResponseDto;
+import com.mjyoo.limitedflashsale.flashsale.entity.FlashSaleItem;
+import com.mjyoo.limitedflashsale.flashsale.repository.FlashSaleItemRepository;
+import com.mjyoo.limitedflashsale.product.dto.*;
 import com.mjyoo.limitedflashsale.product.entity.Product;
 import com.mjyoo.limitedflashsale.product.repository.ProductRepository;
 import com.mjyoo.limitedflashsale.user.entity.User;
@@ -18,6 +18,7 @@ import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
@@ -31,6 +32,7 @@ public class ProductService {
     private final ProductRepository productRepository;
     private final RedisTemplate<String, Object> redisTemplate;
     private final InventoryService inventoryService;
+    private final FlashSaleItemRepository flashSaleItemRepository;
 
     // 단건 Active 상품 조회 (재고 정보 포함)
     public ProductResponseDto getProduct(Long productId) {
@@ -44,29 +46,49 @@ public class ProductService {
 
         // Cache Miss 처리 - DB 조회 후 캐시 저장
         Product product = getProductById(productId);
-        ProductResponseDto productResponseDto = new ProductResponseDto(product);
-        redisTemplate.opsForValue().setIfAbsent(key, productResponseDto);
+        BigDecimal price = product.getPrice();
+
+        // 행사 상품 할인 가격 적용
+        FlashSaleItem activeSaleItem = flashSaleItemRepository.findByProductIdAndFlashSaleStatus(product.getId())
+                .orElse(null);
+        if (activeSaleItem != null) {
+            price = activeSaleItem.getDiscountedPrice();
+        }
+
+        ProductResponseDto productResponseDto = getProductResponseDto(product, price);
+        productResponseDto.setStock(product.getInventory().getStock());
+
+        // 캐시 저장
+        redisTemplate.opsForValue().set(key, productResponseDto, 1, TimeUnit.HOURS);
 
         return productResponseDto;
     }
 
-    public ProductResponseDto getProductDB(Long productId) {
+    /*public ProductResponseDto getProductDB(Long productId) {
         Product product = getProductById(productId);
         return new ProductResponseDto(product);
-    }
+    }*/
 
     // Active 상품 목록 조회
     public ProductListResponseDto getActiveProductList(Long cursor, int size) {
-
+        // 페이징된 상품 목록 조회
         PageRequest pageRequest = PageRequest.of(0, size);
         Slice<Product> productList = getProductsByCursor(cursor, pageRequest);
 
         // 전체 상품 수 조회
         Long totalProducts = productRepository.countActiveProducts();
 
-        List<ProductResponseDto> productInfoList = new ArrayList<>();
+        List<ProductListDto> productInfoList = new ArrayList<>();
         for (Product product : productList) {
-            productInfoList.add(new ProductResponseDto(product));
+            BigDecimal price = product.getPrice();
+
+            FlashSaleItem activeSaleItem = flashSaleItemRepository.findByProductIdAndFlashSaleStatus(product.getId())
+                    .orElse(null);
+
+            if(activeSaleItem != null) {
+                price = activeSaleItem.getDiscountedPrice();
+            }
+            productInfoList.add(getProductListDto(product, price));
         }
         // 마지막 상품의 id를 cursor로 사용
         Long nextCursor = productList.hasNext() ? productInfoList.get(productInfoList.size() - 1).getId() : null;
@@ -75,7 +97,7 @@ public class ProductService {
     }
 
     // 상품 목록 조회 - 관리자용 (deleted 여부에 따라 필터링)
-    public ProductListResponseDto getAllProductList(boolean deleted, User user, Long cursor, int size) {
+    public ProductListWithStockResponseDto getAllProductList(boolean deleted, User user, Long cursor, int size) {
         //관리자 권한 확인
         checkAdminRole(user);
 
@@ -83,7 +105,7 @@ public class ProductService {
         Slice<Product> productList;
         Long totalProducts;
 
-        if(deleted) {
+        if (deleted) {
             productList = getDeletedProductsByCursor(cursor, pageRequest);
             totalProducts = productRepository.countDeletedProducts();
         } else {
@@ -98,7 +120,7 @@ public class ProductService {
         // 마지막 상품의 id를 cursor로 사용
         Long nextCursor = productList.hasNext() ? ProductInfoList.get(ProductInfoList.size() - 1).getId() : null;
 
-        return new ProductListResponseDto(ProductInfoList, totalProducts, nextCursor);
+        return new ProductListWithStockResponseDto(ProductInfoList, totalProducts, nextCursor);
     }
 
     // 상품 생성
@@ -123,7 +145,7 @@ public class ProductService {
         product.update(requestDto);
         product.getInventory().updateStock(stock, product);
 
-        try{
+        try {
             String productKey = RedisKeys.getProductCacheKey(productId);
             // 상품 정보 캐시 무효화 (삭제)
             redisTemplate.delete(productKey);
@@ -164,6 +186,26 @@ public class ProductService {
         if (user == null && !user.getRole().equals(UserRoleEnum.ADMIN)) {
             throw new CustomException(ErrorCode.FORBIDDEN);
         }
+    }
+
+    private ProductListDto getProductListDto(Product product, BigDecimal price) {
+        return ProductListDto.builder()
+                .id(product.getId())
+                .name(product.getName())
+                .price(price)
+                .createdAt(product.getCreatedAt().toString())
+                .modifiedAt(product.getModifiedAt().toString())
+                .build();
+    }
+
+    private ProductResponseDto getProductResponseDto(Product product, BigDecimal price) {
+        return ProductResponseDto.builder()
+                .id(product.getId())
+                .name(product.getName())
+                .price(price)
+                .createdAt(product.getCreatedAt().toString())
+                .modifiedAt(product.getModifiedAt().toString())
+                .build();
     }
 
 }

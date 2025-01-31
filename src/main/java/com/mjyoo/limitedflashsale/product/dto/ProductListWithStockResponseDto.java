@@ -7,9 +7,8 @@ import java.util.List;
 
 @Getter
 @AllArgsConstructor
-public class ProductListResponseDto {
-    private List<ProductListDto> productInfoList;
+public class ProductListWithStockResponseDto {
+    private List<ProductResponseDto> productInfoList;
     private Long totalProductCount;
     private Long lastCursor; // 위치
-
 }

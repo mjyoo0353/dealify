@@ -2,13 +2,13 @@ package com.mjyoo.limitedflashsale.product.controller;
 
 import com.mjyoo.limitedflashsale.auth.security.UserDetailsImpl;
 import com.mjyoo.limitedflashsale.common.dto.ApiResponse;
+import com.mjyoo.limitedflashsale.product.dto.ProductListWithStockResponseDto;
 import com.mjyoo.limitedflashsale.product.dto.ProductRequestDto;
 import com.mjyoo.limitedflashsale.product.dto.ProductListResponseDto;
 import com.mjyoo.limitedflashsale.product.dto.ProductResponseDto;
 import com.mjyoo.limitedflashsale.product.service.InventoryService;
 import com.mjyoo.limitedflashsale.product.service.ProductService;
 import com.mjyoo.limitedflashsale.user.entity.User;
-import com.mjyoo.limitedflashsale.user.entity.UserRoleEnum;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -38,25 +38,24 @@ public class ProductController {
         return ResponseEntity.ok(ApiResponse.success(product));
     }
 
-    //상품 목록 조회
+    //상품 목록 조회 - 사용자
     @GetMapping("/products")
-    public ResponseEntity<ApiResponse<?>> getProducts(@RequestParam(value = "deleted", required = false, defaultValue = "false") boolean deleted,
+    public ResponseEntity<ApiResponse<?>> getProducts(@RequestParam(value = "cursor", required = false, defaultValue = "0") Long cursor,
+                                                      @RequestParam(value = "size", defaultValue = "10") int size) {
+
+        ProductListResponseDto productList = productService.getActiveProductList(cursor, size);
+        return ResponseEntity.ok(ApiResponse.success(productList));
+    }
+
+    //상품 목록 조회 - 관리자
+    @GetMapping("/products-admin")
+    public ResponseEntity<ApiResponse<?>> getProductsByAdmin(@RequestParam(value = "deleted", required = false, defaultValue = "false") boolean deleted,
                                                       @AuthenticationPrincipal UserDetailsImpl userDetails,
                                                       @RequestParam(value = "cursor", required = false, defaultValue = "0") Long cursor,
                                                       @RequestParam(value = "size", defaultValue = "10") int size) {
-        ProductListResponseDto productList;
 
-        if (userDetails == null) {
-            productList = productService.getActiveProductList(cursor, size);
-        } else {
-            User user = userDetails.getUser();
-            // 관리자인 경우, 삭제된 상품도 조회 가능
-            if (user.getRole() == UserRoleEnum.ADMIN) {
-                productList = productService.getAllProductList(deleted, user, cursor, size);
-            } else {
-                productList = productService.getActiveProductList(cursor, size);
-            }
-        }
+        User user = userDetails.getUser();
+        ProductListWithStockResponseDto productList = productService.getAllProductList(deleted, user, cursor, size);
         return ResponseEntity.ok(ApiResponse.success(productList));
     }
 
