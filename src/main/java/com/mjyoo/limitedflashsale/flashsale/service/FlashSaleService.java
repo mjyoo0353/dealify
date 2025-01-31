@@ -73,6 +73,35 @@ public class FlashSaleService {
         return flashSale.getId();
     }
 
+    //행사 수정
+    @Transactional
+    public FlashSaleResponseDto updateFlashSale(Long flashSaleId, FlashSaleUpdateRequestDto requestDto, User user) {
+        checkAdminRole(user); // 관리자 권한 확인
+        FlashSale flashSale = findFlashSale(flashSaleId); // 행사 조회
+
+        // 행사 종료 시 수정 불가
+        if (flashSale.getStatus().equals(FlashSaleStatus.ENDED)) {
+            throw new CustomException(ErrorCode.INVALID_UPDATE_FLASH_SALE);
+        }
+        flashSale.update(requestDto);
+
+        return new FlashSaleResponseDto(flashSale);
+    }
+
+    //행사 삭제
+    @Transactional
+    public void deleteFlashSale(Long flashSaleId, User user) {
+        // 관리자 권한 확인
+        checkAdminRole(user);
+        // 행사 조회
+        FlashSale flashSale = findFlashSale(flashSaleId);
+        // 행사 진행중 또는 종료 시 삭제 불가
+        if (flashSale.getStatus().equals(FlashSaleStatus.ENDED) || flashSale.getStatus().equals(FlashSaleStatus.ACTIVE)) {
+            throw new CustomException(ErrorCode.INVALID_DELETE_FLASH_SALE);
+        }
+        flashSaleRepository.delete(flashSale);
+    }
+
     //행사 상품 추가
     @Transactional
     public void addFlashSaleItem(Long flashSaleId, @Valid FlashSaleItemRequestDto requestDto, User user) {
@@ -114,33 +143,22 @@ public class FlashSaleService {
         flashSaleItemRepository.save(flashSaleItem);
     }
 
-    //행사 수정
+    //행사 상품 삭제
     @Transactional
-    public FlashSaleResponseDto updateFlashSale(Long flashSaleId, FlashSaleUpdateRequestDto requestDto, User user) {
-        checkAdminRole(user); // 관리자 권한 확인
-        FlashSale flashSale = findFlashSale(flashSaleId); // 행사 조회
-
-        // 행사 종료 시 수정 불가
-        if (flashSale.getStatus().equals(FlashSaleStatus.ENDED)) {
-            throw new CustomException(ErrorCode.INVALID_UPDATE_FLASH_SALE);
-        }
-        flashSale.update(requestDto);
-
-        return new FlashSaleResponseDto(flashSale);
-    }
-
-    //행사 삭제
-    @Transactional
-    public void deleteFlashSale(Long flashSaleId, User user) {
+    public void deleteFlashSaleItem(Long flashSaleId, Long productId, User user) {
         // 관리자 권한 확인
         checkAdminRole(user);
         // 행사 조회
         FlashSale flashSale = findFlashSale(flashSaleId);
-        // 행사 진행중 또는 종료 시 삭제 불가
-        if (flashSale.getStatus().equals(FlashSaleStatus.ENDED) || flashSale.getStatus().equals(FlashSaleStatus.ACTIVE)) {
-            throw new CustomException(ErrorCode.INVALID_DELETE_FLASH_SALE);
+        // 행사 시작 전에만 상품 삭제 가능
+        if (flashSale.getStatus() != FlashSaleStatus.SCHEDULED) {
+            throw new CustomException(ErrorCode.FLASH_SALE_NOT_SCHEDULED);
         }
-        flashSaleRepository.delete(flashSale);
+        // 행사 상품 조회
+        FlashSaleItem flashSaleItem = flashSaleItemRepository.findByIdAndFlashSaleId(productId, flashSaleId)
+                .orElseThrow(() -> new CustomException(ErrorCode.PRODUCT_NOT_FOUND));
+        // 상품 삭제
+        flashSaleItemRepository.delete(flashSaleItem);
     }
 
     //행사 시작 (관리자 수동 제어용)

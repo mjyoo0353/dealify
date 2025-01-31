@@ -53,6 +53,16 @@ public class FlashSaleController {
         return ResponseEntity.ok(ApiResponse.success("The product has been added to the flash sale."));
     }
 
+    // 행사 상품 삭제
+    @DeleteMapping("/flash-sale/{flashSaleId}/products/{productId}")
+    public ResponseEntity<ApiResponse<?>> deleteFlashSaleItem(@PathVariable Long flashSaleId,
+                                                              @PathVariable Long productId,
+                                                              @AuthenticationPrincipal UserDetailsImpl userDetails) {
+        User user = userDetails.getUser();
+        flashSaleService.deleteFlashSaleItem(flashSaleId, productId, user);
+        return ResponseEntity.ok(ApiResponse.success("The product has been removed from the flash sale."));
+    }
+
     // 행사 수정
     @PutMapping("/flash-sale/{flashSaleId}")
     public ResponseEntity<ApiResponse<?>> updateFlashSale(@PathVariable Long flashSaleId,
