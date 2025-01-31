@@ -15,12 +15,12 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
     @Query("SELECT p FROM Product p JOIN FETCH p.inventory WHERE p.id = :id AND p.isDeleted = false")
     Optional<Product> findByIdWithInventory(@Param("id") Long id);
 
-    // Active 상품 목록 조회 - 페이징 no offset
-    @Query("SELECT p FROM Product p JOIN FETCH p.inventory WHERE p.isDeleted = false AND (:cursor IS NULL OR p.id < :cursor) ORDER BY p.id DESC")
+    // Active 상품 목록 조회 - 페이징 no offset, 리스트에서 품절/판매중 여부 확인을 위해 join fetch 사용
+    @Query("SELECT p FROM Product p JOIN FETCH p.inventory WHERE p.isDeleted = false AND (:cursor = 0 OR p.id < :cursor) ORDER BY p.id DESC")
     Slice<Product> findActiveProductsAndCursor(@Param("cursor") Long cursor, Pageable pageable);
 
     // 삭제된 상품 목록 조회 - 페이징 no offset
-    @Query("SELECT p FROM Product p JOIN FETCH p.inventory WHERE p.isDeleted = true AND (:cursor IS NULL OR p.id < :cursor) ORDER BY p.id DESC")
+    @Query("SELECT p FROM Product p JOIN FETCH p.inventory WHERE p.isDeleted = true AND (:cursor = 0 OR p.id < :cursor) ORDER BY p.id DESC")
     Slice<Product> findDeletedProductsAndCursor(@Param("cursor") Long cursor, Pageable pageable);
 
     // ACTIVE 상품만 카운트

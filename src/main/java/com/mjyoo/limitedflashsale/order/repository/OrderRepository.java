@@ -17,7 +17,7 @@ import java.util.Optional;
 public interface OrderRepository extends JpaRepository<Order, Long> {
 
     // 주문 목록 조회 - 페이징 no offset
-    @Query(value = "SELECT DISTINCT o FROM Order o JOIN FETCH o.user WHERE o.user.id = :id AND (:cursor IS NULL OR o.id < :cursor) AND o.status = 'ORDERED' ORDER BY o.id DESC",
+    @Query(value = "SELECT DISTINCT o FROM Order o JOIN FETCH o.user WHERE o.user.id = :id AND (:cursor = 0 OR o.id < :cursor) AND o.status = 'ORDERED' ORDER BY o.id DESC",
             countQuery = "SELECT COUNT(o) FROM Order o WHERE o.user.id = :id AND o.status = 'ORDERED'")
     Slice<Order> findByUserIdAndCursor(@Param("id") Long id,@Param("cursor") Long cursor, Pageable pageable);
 

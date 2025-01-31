@@ -28,7 +28,7 @@ public interface FlashSaleRepository extends JpaRepository<FlashSale, Long> {
     Optional<FlashSale> findByIdWithProducts(@Param("flashSaleId") Long flashSaleId);
 
     // 행사 목록 조회 - 페이징 no offset
-    @Query(value = "SELECT DISTINCT fs FROM FlashSale  fs LEFT JOIN FETCH fs.flashSaleItemList WHERE (:cursor IS NULL OR fs.id < :cursor) ORDER BY fs.id DESC",
+    @Query(value = "SELECT DISTINCT fs FROM FlashSale  fs LEFT JOIN FETCH fs.flashSaleItemList WHERE (:cursor = 0 OR fs.id < :cursor) ORDER BY fs.id DESC",
             countQuery = "SELECT COUNT(fs) FROM FlashSale fs")
     Slice<FlashSale> findAllWithProductsAndCursor(Long cursor, PageRequest pageRequest);
 }
