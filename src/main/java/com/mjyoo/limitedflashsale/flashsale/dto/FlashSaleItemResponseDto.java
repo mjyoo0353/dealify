@@ -11,13 +11,11 @@ public class FlashSaleItemResponseDto {
     private BigDecimal originalPrice;
     private BigDecimal discountRate;
     private BigDecimal discountedPrice;
-    private int stock; // 행사 시점의 재고
 
     public FlashSaleItemResponseDto(FlashSaleItem flashSaleItem) {
         this.productId = flashSaleItem.getProduct().getId();
         this.originalPrice = flashSaleItem.getOriginalPrice();
         this.discountRate = flashSaleItem.getDiscountRate();
         this.discountedPrice = flashSaleItem.getDiscountedPrice();
-        this.stock = flashSaleItem.getInitialStock();
     }
 }

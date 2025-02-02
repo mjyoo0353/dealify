@@ -25,9 +25,6 @@ public class FlashSaleItem extends Timestamped {
     @Column(nullable = false, precision = 10, scale = 2)
     private BigDecimal discountedPrice; // 할인된 가격
 
-    @Column(nullable = false)
-    private int initialStock; // 행사 시점의 재고
-
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private FlashSaleItemStatus status; // 행사 상품 상태
@@ -41,11 +38,10 @@ public class FlashSaleItem extends Timestamped {
     private Product product;
 
     @Builder
-    public FlashSaleItem(BigDecimal originalPrice, BigDecimal discountRate, BigDecimal discountedPrice, int initialStock, FlashSaleItemStatus status, FlashSale flashSale, Product product) {
+    public FlashSaleItem(BigDecimal originalPrice, BigDecimal discountRate, BigDecimal discountedPrice, FlashSaleItemStatus status, FlashSale flashSale, Product product) {
         this.originalPrice = originalPrice;
         this.discountRate = discountRate;
         this.discountedPrice = discountedPrice;
-        this.initialStock = initialStock;
         this.status = status;
         this.flashSale = flashSale;
         this.product = product;

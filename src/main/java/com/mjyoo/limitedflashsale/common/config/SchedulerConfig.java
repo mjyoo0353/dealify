@@ -10,9 +10,6 @@ import org.springframework.scheduling.annotation.EnableScheduling;
 @Getter
 public class SchedulerConfig {
 
-    @Value("${scheduler.order.sync-time}")
-    private String orderSyncTime;
-
     @Value("${scheduler.flash-sale.open-time}")
     private String flashSaleOpenTime;
 

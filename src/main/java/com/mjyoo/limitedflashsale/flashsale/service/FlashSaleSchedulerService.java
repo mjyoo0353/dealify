@@ -2,17 +2,22 @@ package com.mjyoo.limitedflashsale.flashsale.service;
 
 import com.mjyoo.limitedflashsale.common.exception.CustomException;
 import com.mjyoo.limitedflashsale.common.exception.ErrorCode;
+import com.mjyoo.limitedflashsale.common.util.RedisKeys;
 import com.mjyoo.limitedflashsale.flashsale.entity.FlashSale;
+import com.mjyoo.limitedflashsale.flashsale.entity.FlashSaleItem;
 import com.mjyoo.limitedflashsale.flashsale.entity.FlashSaleStatus;
 import com.mjyoo.limitedflashsale.flashsale.repository.FlashSaleRepository;
+import com.mjyoo.limitedflashsale.product.dto.ProductResponseDto;
 import io.lettuce.core.RedisConnectionException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.retry.annotation.Backoff;
 import org.springframework.retry.annotation.Retryable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -23,9 +28,11 @@ import java.util.List;
 public class FlashSaleSchedulerService {
 
     private final FlashSaleRepository flashSaleRepository;
+    private final RedisTemplate<String, Object> redisTemplate;
 
     //행사 시작 (자동 스케줄링용)
     @Retryable(value = {RedisConnectionException.class}, maxAttempts = 3, backoff = @Backoff(delay = 1000))
+    @Transactional
     public void openFlashSale(Long flashSaleId) {
         // 상태 검증
         FlashSale flashSale = findFlashSale(flashSaleId);
@@ -36,10 +43,16 @@ public class FlashSaleSchedulerService {
         }
         // DB 상태 업데이트
         updateFlashSaleStatus(flashSale, FlashSaleStatus.ACTIVE);
+
+        // 상품 조회 시, 할인된 price 적용을 위해 캐시 갱신
+        for(FlashSaleItem flashSaleItem : flashSale.getFlashSaleItemList()) {
+            updateFlashSaleProductCache(flashSaleItem);
+        }
     }
 
     //행사 종료 (자동 스케줄링용)
     @Retryable(value = {RedisConnectionException.class}, maxAttempts = 3, backoff = @Backoff(delay = 1000))
+    @Transactional
     public void closeFlashSale(Long flashSaleId) {
         // 상태 검증
         FlashSale flashSale = findFlashSale(flashSaleId);
@@ -50,6 +63,10 @@ public class FlashSaleSchedulerService {
         // DB 상태 업데이트
         updateFlashSaleStatus(flashSale, FlashSaleStatus.ENDED);
 
+        // 상품 조회 시, original price 적용을 위해 캐시 갱신
+        for(FlashSaleItem flashSaleItem : flashSale.getFlashSaleItemList()) {
+            updateFlashSaleProductCache(flashSaleItem);
+        }
     }
 
     // 현재 시점에 오픈해야할 할인행사 목록 조회
@@ -89,8 +106,15 @@ public class FlashSaleSchedulerService {
 
     // 행사 조회
     private FlashSale findFlashSale(Long flashSaleId) {
-        return flashSaleRepository.findById(flashSaleId)
+        return flashSaleRepository.findByIdWithProducts(flashSaleId)
                 .orElseThrow(() -> new CustomException(ErrorCode.FLASH_SALE_NOT_FOUND));
+    }
+
+    private void updateFlashSaleProductCache(FlashSaleItem flashSaleItem) {
+        String productKey = RedisKeys.getProductCacheKey(flashSaleItem.getProduct().getId());
+        ProductResponseDto productInfo = new ProductResponseDto(flashSaleItem.getProduct(), flashSaleItem);
+        Duration ttl = Duration.between(LocalDateTime.now(), flashSaleItem.getFlashSale().getEndTime());
+        redisTemplate.opsForValue().set(productKey, productInfo, ttl);
     }
 
 }

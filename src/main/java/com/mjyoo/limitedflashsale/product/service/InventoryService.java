@@ -79,13 +79,17 @@ public class InventoryService {
             // DB 재고 감소 처리
             product.getInventory().decreaseStock(quantity);
 
-            // 재고 감소 처리 캐시에도 업데이트
-            String key = RedisKeys.getInventoryCacheKey(product.getId());
-            Long currentStock = redisTemplate.opsForValue().decrement(key, quantity);
+            // Product 캐시 무효화
+            String productKey = RedisKeys.getProductCacheKey(product.getId());
+            redisTemplate.delete(productKey);
+
+            // Inventory 캐시 업데이트
+            String inventoryKey = RedisKeys.getInventoryCacheKey(product.getId());
+            Long currentStock = redisTemplate.opsForValue().decrement(inventoryKey, quantity);
 
             // 재고 부족 시 롤백
             if (currentStock < 0) {
-                redisTemplate.opsForValue().increment(key, quantity);
+                redisTemplate.opsForValue().increment(inventoryKey, quantity);
                 throw new CustomException(ErrorCode.INSUFFICIENT_STOCK);
             }
 

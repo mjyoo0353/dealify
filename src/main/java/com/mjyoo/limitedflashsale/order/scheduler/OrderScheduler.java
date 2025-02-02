@@ -25,7 +25,7 @@ public class OrderScheduler {
      * 만료된 주문 처리 스케줄러
      * 실행 주기: 1분마다
      */
-    @Scheduled(cron = "${scheduler.order.sync-time}")
+    @Scheduled(fixedRateString = "${scheduler.order.fixed-rate}")
     @Transactional
     public void processExpiredOrders() {
         log.info("Starting to process expired orders...");

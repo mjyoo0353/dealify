@@ -122,11 +122,6 @@ public class FlashSaleService {
             throw new CustomException(ErrorCode.PRODUCT_ALREADY_EXISTS);
         }
 
-        // 재고 확인
-        if (requestDto.getStock() > product.getInventory().getStock()) {
-            throw new CustomException(ErrorCode.OUT_OF_STOCK);
-        }
-
         BigDecimal originalPrice = product.getPrice();
         BigDecimal discountRate = requestDto.getDiscountRate();
 
@@ -137,7 +132,6 @@ public class FlashSaleService {
                 .originalPrice(originalPrice)
                 .discountRate(discountRate)
                 .discountedPrice(originalPrice.subtract(originalPrice.multiply(discountRate)))
-                .initialStock(requestDto.getStock())
                 .status(FlashSaleItemStatus.AVAILABLE)
                 .build();
         flashSaleItemRepository.save(flashSaleItem);

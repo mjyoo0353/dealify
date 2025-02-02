@@ -19,9 +19,10 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.time.Duration;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.TimeUnit;
 
 
 @Slf4j
@@ -46,22 +47,23 @@ public class ProductService {
 
         // Cache Miss 처리 - DB 조회 후 캐시 저장
         Product product = getProductById(productId);
-        BigDecimal price = product.getPrice();
-
-        // 행사 상품 할인 가격 적용
         FlashSaleItem activeSaleItem = flashSaleItemRepository.findByProductIdAndFlashSaleStatus(product.getId())
                 .orElse(null);
-        if (activeSaleItem != null) {
-            price = activeSaleItem.getDiscountedPrice();
-        }
 
-        ProductResponseDto productResponseDto = getProductResponseDto(product, price);
-        productResponseDto.setStock(product.getInventory().getStock());
+        // 할인 상품인 경우 할인 가격 적용
+        ProductResponseDto productInfo =
+                activeSaleItem != null ? new ProductResponseDto(product, activeSaleItem)
+                        : new ProductResponseDto(product);
+
+        // 일반 상품은 캐시 만료 시간 10분, 행사 상품은 행사 종료 시간까지
+        Duration ttl =
+                activeSaleItem != null ? Duration.between(LocalDateTime.now(), activeSaleItem.getFlashSale().getEndTime())
+                        : Duration.ofMinutes(10);
 
         // 캐시 저장
-        redisTemplate.opsForValue().set(key, productResponseDto, 1, TimeUnit.HOURS);
+        redisTemplate.opsForValue().set(key, productInfo, ttl);
 
-        return productResponseDto;
+        return productInfo;
     }
 
     /*public ProductResponseDto getProductDB(Long productId) {
@@ -85,7 +87,7 @@ public class ProductService {
             FlashSaleItem activeSaleItem = flashSaleItemRepository.findByProductIdAndFlashSaleStatus(product.getId())
                     .orElse(null);
 
-            if(activeSaleItem != null) {
+            if (activeSaleItem != null) {
                 price = activeSaleItem.getDiscountedPrice();
             }
             productInfoList.add(getProductListDto(product, price));
@@ -190,16 +192,6 @@ public class ProductService {
 
     private ProductListDto getProductListDto(Product product, BigDecimal price) {
         return ProductListDto.builder()
-                .id(product.getId())
-                .name(product.getName())
-                .price(price)
-                .createdAt(product.getCreatedAt().toString())
-                .modifiedAt(product.getModifiedAt().toString())
-                .build();
-    }
-
-    private ProductResponseDto getProductResponseDto(Product product, BigDecimal price) {
-        return ProductResponseDto.builder()
                 .id(product.getId())
                 .name(product.getName())
                 .price(price)
