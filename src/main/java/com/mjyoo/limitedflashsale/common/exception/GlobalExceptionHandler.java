@@ -23,9 +23,16 @@ public class GlobalExceptionHandler {
      */
     @ExceptionHandler(CustomException.class)
     protected ResponseEntity<ApiResponse<?>> handleCustomException(CustomException e) {
-        log.error("handleCustomException = {}", e.getMessage());
+        log.error("handleCustomException", e);
         return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                .body(ApiResponse.fail(e.getMessage()));
+                .body(ApiResponse.error(e.getClass().getName() + ": " + e.getMessage()));
+    }
+
+    @ExceptionHandler(TokenCreationException.class)
+    protected ResponseEntity<ApiResponse<?>> handleTokenCreationException(TokenCreationException e) {
+        log.error("handleTokenCreationException", e);
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(ApiResponse.error(e.getClass().getName() + ": " + e.getMessage()));
     }
 
     /**
@@ -33,9 +40,9 @@ public class GlobalExceptionHandler {
      */
     @ExceptionHandler(HttpRequestMethodNotSupportedException.class)
     protected ResponseEntity<ApiResponse<?>> handleHttpRequestMethodNotSupportedException(HttpRequestMethodNotSupportedException e) {
-        log.error("handleHttpRequestMethodNotSupportedException = {}", e.getMessage());
+        log.error("handleHttpRequestMethodNotSupportedException", e);
         return ResponseEntity.status(HttpStatus.METHOD_NOT_ALLOWED)
-                .body(ApiResponse.fail(e.getMessage()));
+                .body(ApiResponse.error(e.getClass().getName() + ": " + e.getMessage()));
     }
 
     /**
@@ -43,16 +50,16 @@ public class GlobalExceptionHandler {
      */
     @ExceptionHandler(AccessDeniedException.class)
     public ResponseEntity<ApiResponse<?>> handleAccessDeniedException(AccessDeniedException e) {
-        log.error("handleAccessDeniedException = {}", e.getMessage());
+        log.error("handleAccessDeniedException", e);
         return ResponseEntity.status(HttpStatus.FORBIDDEN)
-                .body(ApiResponse.fail(e.getMessage()));
+                .body(ApiResponse.error(e.getClass().getName() + ": " + e.getMessage()));
     }
 
     @ExceptionHandler(AuthenticationException.class)
     public ResponseEntity<ApiResponse<?>> handleAuthenticationException(AuthenticationException e) {
-        log.error("handleAuthenticationException = {}", e.getMessage());
+        log.error("handleAuthenticationException", e);
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                .body(ApiResponse.fail(e.getMessage()));
+                .body(ApiResponse.error(e.getClass().getName() + ": " + e.getMessage()));
     }
 
     /**
@@ -60,19 +67,20 @@ public class GlobalExceptionHandler {
      */
     @ExceptionHandler(IllegalArgumentException.class)
     protected ResponseEntity<ApiResponse<?>> handleIllegalArgumentException(IllegalArgumentException e) {
-        log.error("handleIllegalArgumentException = {}", e.getMessage());
+        log.error("handleIllegalArgumentException", e);
         return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                .body(ApiResponse.fail(e.getMessage()));
+                .body(ApiResponse.error(e.getClass().getName() + ": " + e.getMessage()));
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
     protected ResponseEntity<ApiResponse<?>> handleMethodArgumentNotValidException(MethodArgumentNotValidException e) {
+        log.error("handleMethodArgumentNotValidException", e);
         List<String> errorMessages = e.getBindingResult().getFieldErrors().stream()
                 .map(fieldError -> fieldError.getDefaultMessage())  // 필드별 검증 메시지 추출
                 .collect(Collectors.toList());
 
         return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                .body(ApiResponse.fail(String.join(", ", errorMessages)));  // 메시지 합쳐서 반환
+                .body(ApiResponse.error(String.join(", ", errorMessages)));  // 메시지 합쳐서 반환
     }
 
     /**
@@ -80,9 +88,9 @@ public class GlobalExceptionHandler {
      */
     @ExceptionHandler(Exception.class)
     protected ResponseEntity<ApiResponse<?>> handleException(Exception e) {
-        log.error("handleException = {}", e.getMessage());
+        log.error("handleException", e);
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                .body(ApiResponse.fail(e.getMessage()));
+                .body(ApiResponse.error(e.getClass().getName() + ": " + e.getMessage()));
     }
 
 }

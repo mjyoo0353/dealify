@@ -179,7 +179,7 @@ public class OrderService {
         Order order = findOrderById(orderId);
 
         if (OrderStatus.CANCELED.equals(order.getStatus())) {
-            throw new CustomException(ErrorCode.BAD_REQUEST);
+            throw new CustomException(ErrorCode.INVALID_ORDER_STATUS);
         }
 
         // 주문 취소 권한 확인
