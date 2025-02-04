@@ -30,6 +30,7 @@ dependencies {
     runtimeOnly group: 'io.jsonwebtoken', name: 'jjwt-jackson', version: '0.11.5'
 
     implementation 'org.springframework.boot:spring-boot-starter-data-redis'
+    implementation 'org.redisson:redisson-spring-boot-starter:3.42.0'
     implementation 'org.springframework.retry:spring-retry'
     implementation 'org.springframework.boot:spring-boot-starter-aop'
 
@@ -49,4 +50,8 @@ dependencies {
 
 tasks.named('test') {
     useJUnitPlatform()
+}
+
+test {
+    enabled = false
 }

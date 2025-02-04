@@ -4,7 +4,6 @@ import com.mjyoo.limitedflashsale.common.util.RedisKeys;
 import com.mjyoo.limitedflashsale.common.exception.CustomException;
 import com.mjyoo.limitedflashsale.common.exception.ErrorCode;
 import com.mjyoo.limitedflashsale.order.entity.OrderItem;
-import com.mjyoo.limitedflashsale.product.entity.Inventory;
 import com.mjyoo.limitedflashsale.product.entity.Product;
 import com.mjyoo.limitedflashsale.product.repository.InventoryRepository;
 import com.mjyoo.limitedflashsale.product.repository.ProductRepository;
@@ -31,7 +30,6 @@ public class InventoryService {
     private final RedisTemplate<String, Object> redisTemplate;
     private final RedissonClient redissonClient;
 
-
     // 초기 재고 설정 메서드
     public void setStock(Long productId, int stock) {
         // Redis에 초기 재고 설정
@@ -41,27 +39,21 @@ public class InventoryService {
     // 재고 조회용 - DB 조회 및 캐시 갱신
     @Transactional(readOnly = true)
     public int getStock(Long productId) {
+        String cacheKey = RedisKeys.getInventoryCacheKey(productId);
         // 캐시 조회
-        Integer cachedStock = getStockFromCache(productId);
+        Integer cachedStock = (Integer) redisTemplate.opsForValue().get(cacheKey);
         if (cachedStock != null) {
             return cachedStock;
         }
 
         // Cache Miss 처리 - DB 조회 (읽기만 하므로 일반 조회)
-        Inventory inventory = inventoryRepository.findByProductId(productId)
-                .orElseThrow(() -> new CustomException(ErrorCode.PRODUCT_NOT_FOUND));
-        int stock = inventory.getStock();
+        int stock = inventoryRepository.findByProductId(productId)
+                .orElseThrow(() -> new CustomException(ErrorCode.PRODUCT_NOT_FOUND))
+                .getStock();
 
         // 캐시 업데이트
-        int ttl = calculateTTL(stock);
-        redisTemplate.opsForValue().setIfAbsent(RedisKeys.getInventoryCacheKey(productId), stock, ttl, TimeUnit.MINUTES);
+        redisTemplate.opsForValue().set(cacheKey, stock, calculateTTL(stock), TimeUnit.MINUTES);
         return stock;
-    }
-
-    // 캐시 재고 조회
-    public Integer getStockFromCache(Long productId) {
-        String key = RedisKeys.getInventoryCacheKey(productId);
-        return (Integer) redisTemplate.opsForValue().get(key);
     }
 
     @Transactional
@@ -158,9 +150,9 @@ public class InventoryService {
     }
 
     private int calculateTTL(int stock) {
-        if (stock < 5) return 1; // 1분
-        if (stock < 20) return 3; // 3분
+        if (stock < 10) return 1; // 1분
         if (stock < 50) return 5; // 5분
         return 10; // 10분 - 충분한 상태
     }
+
 }
