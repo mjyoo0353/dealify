@@ -30,6 +30,7 @@ public class CartService {
     private final ProductRepository productRepository;
 
     // 사용자별 장바구니 목록 조회
+    @Transactional(readOnly = true)
     public CartListResponseDto getCartList(User user) {
         // 사용자의 장바구니 조회
         Cart cart = cartRepository.findByUserId(user.getId())

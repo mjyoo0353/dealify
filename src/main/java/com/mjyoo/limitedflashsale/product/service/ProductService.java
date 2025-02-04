@@ -36,6 +36,7 @@ public class ProductService {
     private final FlashSaleItemRepository flashSaleItemRepository;
 
     // 단건 Active 상품 조회 (재고 정보 포함)
+    @Transactional(readOnly = true)
     public ProductResponseDto getProduct(Long productId) {
         // 캐시에서 상품 정보 조회
         String key = RedisKeys.getProductCacheKey(productId);
@@ -72,6 +73,7 @@ public class ProductService {
     }*/
 
     // Active 상품 목록 조회
+    @Transactional(readOnly = true)
     public ProductListResponseDto getActiveProductList(Long cursor, int size) {
         // 페이징된 상품 목록 조회
         PageRequest pageRequest = PageRequest.of(0, size);
@@ -99,6 +101,7 @@ public class ProductService {
     }
 
     // 상품 목록 조회 - 관리자용 (deleted 여부에 따라 필터링)
+    @Transactional(readOnly = true)
     public ProductListWithStockResponseDto getAllProductList(boolean deleted, User user, Long cursor, int size) {
         //관리자 권한 확인
         checkAdminRole(user);

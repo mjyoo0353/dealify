@@ -14,6 +14,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -74,6 +75,7 @@ public class UserService {
     }
 
     //마이페이지 조회
+    @Transactional(readOnly = true)
     public UserResponseDto getMyPage(User user) {
         User userInfo = userRepository.findByEmail(user.getEmail())
                 .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
@@ -81,6 +83,7 @@ public class UserService {
     }
 
     //회원 정보 조회
+    @Transactional(readOnly = true)
     public UserResponseDto getUserInfo(Long id, User user) {
         checkAdminRole(user);
         User userInfo = userRepository.findById(id)
@@ -89,6 +92,7 @@ public class UserService {
     }
 
     //회원 리스트 조회
+    @Transactional(readOnly = true)
     public UserListResponseDto getUserList(User user) {
         checkAdminRole(user);
 

@@ -52,6 +52,7 @@ public class OrderService {
     private final InventoryService inventoryService;
 
     //주문 내역 상세 조회
+    @Transactional(readOnly = true)
     public OrderResponseDto getOrder(Long orderId, User user) {
         Order order = findOrderById(orderId);
         findOrderByUser(user, order);
@@ -59,6 +60,7 @@ public class OrderService {
     }
 
     //주문 리스트 조회
+    @Transactional(readOnly = true)
     public OrderListResponseDto getOrderList(User user, Long cursor, int size) {
         PageRequest pageRequest = PageRequest.of(0, size);
         Slice<Order> orderList = findOrdersByCursor(user, cursor, pageRequest);

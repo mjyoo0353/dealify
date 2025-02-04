@@ -36,12 +36,14 @@ public class FlashSaleService {
     private final FlashSaleItemRepository flashSaleItemRepository;
 
     //행사 조회
+    @Transactional(readOnly = true)
     public FlashSaleResponseDto getFlashSaleDetail(Long flashSaleId) {
         FlashSale flashSale = findFlashSaleWithProduct(flashSaleId);
         return new FlashSaleResponseDto(flashSale);
     }
 
     //행사 목록 조회
+    @Transactional(readOnly = true)
     public FlashSaleListResponseDto getFlashSaleList(Long cursor, int size) {
         PageRequest pageRequest = PageRequest.of(0, size);
         Slice<FlashSale> flashSaleList = flashSaleRepository.findAllWithProductsAndCursor(cursor, pageRequest);
