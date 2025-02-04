@@ -1,0 +1,7 @@
+[mysqld]
+server-id=2
+relay-log=mysql-relay-bin
+binlog_format=ROW
+bind-address=0.0.0.0
+log_slave_updates=1
+read_only=1

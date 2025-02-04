@@ -1,0 +1,7 @@
+FROM mysql:8.0
+
+# 커스텀 replication 설정 파일을 이미지 내부로 복사
+COPY mysql/master/conf.d/replication_master.cnf /etc/mysql/conf.d/
+
+# 안전한 권한(644)로 설정 파일 권한 수정
+RUN chmod 644 /etc/mysql/conf.d/replication_master.cnf

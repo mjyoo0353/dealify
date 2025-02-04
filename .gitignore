@@ -18,7 +18,7 @@ bin/
 !**/src/test/**/bin/
 
 ### Environtment Files ###
-/application-secrets.yml
+application-secrets.yml
 *.env
 
 ### IntelliJ IDEA ###
@@ -39,3 +39,15 @@ out/
 
 ### VS Code ###
 .vscode/
+
+# MySQL
+mysql/*/data/
+
+# Redis
+redis/data/
+
+# Logs
+logs/
+
+# Test data
+k6/test-tokens.json

@@ -1,17 +1,22 @@
 spring:
   profiles:
     include: secrets # 민감 정보 포함 파일
-
   datasource:
-    driver-class-name: com.mysql.cj.jdbc.Driver
-    url: jdbc:mysql://localhost:3308/ecommerce_db
-    #url: jdbc:mysql://mysql:3306/ecommerce_db
-    username: ${DB_USERNAME}
-    password: ${DB_PASSWORD}
-
+    master:
+      driver-class-name: com.mysql.cj.jdbc.Driver
+      jdbc-url: jdbc:mysql://localhost:3308/ecommerce_db
+      #jdbc-url: jdbc:mysql://mysql_master:3306/ecommerce_db
+      username: ${DB_USERNAME}
+      password: ${DB_PASSWORD}
+    slave:
+      driver-class-name: com.mysql.cj.jdbc.Driver
+      jdbc-url: jdbc:mysql://localhost:3307/ecommerce_db
+      #jdbc-url: jdbc:mysql://mysql_slave_1:3306/ecommerce_db
+      username: ${DB_USERNAME}
+      password: ${DB_PASSWORD}
   jpa:
     hibernate:
-      ddl-auto: none
+      ddl-auto: update
     show-sql: true
     properties:
         dialect: org.hibernate.dialect.MySQL8Dialect
@@ -32,7 +37,7 @@ spring:
             required: true
 
   redis:
-    host: redis
+    host: localhost
     port: 6379
 
 management:
@@ -42,11 +47,15 @@ management:
         include: health, metrics, info, loggers
 
 scheduler:
+  # 주문 이탈 건 처리
   order:
-    sync-time: "0 1 * * * *" # 매 시간 1분에 실행
+    fixed-rate: 60000 # 1분마다 실행
+
+  # 플래시 세일 오픈, 클로즈
   flash-sale:
     open-time: "0 0 14 * * *" # 매일 오후 2시에 실행
     close-time: "0 0 15 * * *" # 매일 오후 3시에 실행
+
 
 logging:
   level:

@@ -8,7 +8,7 @@ services: #컨테이너 목록
     ports:
       - "8081:8080" #로컬 8081 포트와 컨테이너 내의 8080 포트를 매핑
     depends_on:
-      mysql:
+      mysql_master:
         condition: service_healthy
       redis:
         condition: service_healthy
@@ -16,7 +16,8 @@ services: #컨테이너 목록
       - my-network
     environment:
       SPRING_JPA_HIBERNATE_DDL_AUTO: update
-      SPRING_DATABASE_URL: jdbc:mysql://mysql:3306/ecommerce_db
+      SPRING_DATABASE_MASTER_URL: jdbc:mysql://mysql_master:3306/ecommerce_db
+      SPRING_DATABASE_SLAVE_URL: jdbc:mysql://mysql_slave_1:3306/ecommerce_db
       SPRING_DATABASE_USERNAME: ${DB_USERNAME}
       SPRING_DATABASE_PASSWORD: ${DB_PASSWORD}
       SPRING_REDIS_HOST: redis
@@ -31,7 +32,7 @@ services: #컨테이너 목록
     ports:
       - "8082:8080"
     depends_on:
-      mysql:
+      mysql_master:
         condition: service_healthy
       redis:
         condition: service_healthy
@@ -39,7 +40,8 @@ services: #컨테이너 목록
       - my-network
     environment:
       SPRING_JPA_HIBERNATE_DDL_AUTO: none
-      SPRING_DATABASE_URL: jdbc:mysql://mysql:3306/ecommerce_db
+      SPRING_DATABASE_MASTER_URL: jdbc:mysql://mysql_master:3306/ecommerce_db
+      SPRING_DATABASE_SLAVE_URL: jdbc:mysql://mysql_slave_1:3306/ecommerce_db
       SPRING_DATABASE_USERNAME: ${DB_USERNAME}
       SPRING_DATABASE_PASSWORD: ${DB_PASSWORD}
       SPRING_REDIS_HOST: redis
@@ -54,7 +56,7 @@ services: #컨테이너 목록
     ports:
       - "8083:8080"
     depends_on:
-      mysql:
+      mysql_master:
         condition: service_healthy
       redis:
         condition: service_healthy
@@ -62,23 +64,28 @@ services: #컨테이너 목록
       - my-network
     environment:
       SPRING_JPA_HIBERNATE_DDL_AUTO: none
-      SPRING_DATABASE_URL: jdbc:mysql://mysql:3306/ecommerce_db
+      SPRING_DATABASE_MASTER_URL: jdbc:mysql://mysql_master:3306/ecommerce_db
+      SPRING_DATABASE_SLAVE_URL: jdbc:mysql://mysql_slave_1:3306/ecommerce_db
       SPRING_DATABASE_USERNAME: ${DB_USERNAME}
       SPRING_DATABASE_PASSWORD: ${DB_PASSWORD}
       SPRING_REDIS_HOST: redis
       SPRING_REDIS_PORT: 6379
 
-  mysql:
+  mysql_master:
     image: mysql:8.0
-    container_name: mysql
+    command: --server-id=1
+    container_name: mysql_master
     restart: always
     ports:
       - "3308:3306" #로컬 3308 포트와 컨테이너 내의 3306 포트를 매핑
     volumes:
-      - mysql_data:/var/lib/mysql
+      - ./mysql/master/data:/var/lib/mysql
+      - ./mysql/master/conf.d:/etc/mysql/conf.d # 커스텀 설정 파일 위치
     environment:
-      MYSQL_DATABASE: ecommerce_db
       MYSQL_ROOT_PASSWORD: ${DB_PASSWORD}
+      MYSQL_DATABASE: ecommerce_db
+      MYSQL_USER: ${DB_USERNAME}
+      MYSQL_PASSWORD: ${DB_PASSWORD}
     healthcheck:
       test: [ "CMD", "mysqladmin", "ping", "-h", "localhost" ]
       interval: 10s
@@ -86,6 +93,31 @@ services: #컨테이너 목록
       retries: 5
     networks:
       - my-network
+
+  mysql_slave_1:
+    image: mysql:8.0
+    command: --server-id=2
+    container_name: mysql_slave_1
+    restart: always
+    ports:
+      - "3307:3306" #로컬 3308 포트와 컨테이너 내의 3306 포트를 매핑
+    volumes:
+      - ./mysql/slave1/data:/var/lib/mysql
+      - ./mysql/slave1/conf.d:/etc/mysql/conf.d # 커스텀 설정 파일 위치
+    environment:
+      MYSQL_ROOT_PASSWORD: ${DB_PASSWORD}
+      MYSQL_DATABASE: ecommerce_db
+      MYSQL_USER: ${DB_USERNAME}
+      MYSQL_PASSWORD: ${DB_PASSWORD}
+    healthcheck:
+      test: [ "CMD", "mysqladmin", "ping", "-h", "localhost" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - my-network
+    depends_on:
+      - mysql_master
 
   # Nginx 로드밸런서
   nginx:

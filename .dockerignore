@@ -1,0 +1,22 @@
+# IDE 설정 / OS 메타데이터
+.idea/
+.vscode/
+*.iml
+*.ipr
+*.iws
+.DS_Store
+
+# Gradle & 빌드 산출물
+.gradle/
+out/
+target/
+
+# 로그 & 임시 파일
+*.log
+logs/
+*.tmp
+*.swp
+
+# 기타 자주 등장하는 폴더/파일
+node_modules/
+coverage/
