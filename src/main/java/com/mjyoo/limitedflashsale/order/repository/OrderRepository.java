@@ -17,8 +17,7 @@ import java.util.Optional;
 public interface OrderRepository extends JpaRepository<Order, Long> {
 
     // 주문 목록 조회 - 페이징 no offset
-    @Query(value = "SELECT DISTINCT o FROM Order o JOIN FETCH o.user WHERE o.user.id = :id AND (:cursor = 0 OR o.id < :cursor) AND o.status = 'ORDERED' ORDER BY o.id DESC",
-            countQuery = "SELECT COUNT(o) FROM Order o WHERE o.user.id = :id AND o.status = 'ORDERED'")
+    @Query(value = "SELECT o FROM Order o WHERE o.user.id = :id AND (:cursor = 0 OR o.id < :cursor) AND o.status = 'ORDERED' ORDER BY o.id DESC")
     Slice<Order> findByUserIdAndCursor(@Param("id") Long id,@Param("cursor") Long cursor, Pageable pageable);
 
     // 전체 주문 수 조회, 단순 카운트 쿼리로 성능 최적화
@@ -26,8 +25,7 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
     Long countAllByUserId(Long userId);
 
     // 만료된 주문 조회 - 오더스케줄러에 의해 삭제됨
-    @Query(value = "SELECT o FROM Order o JOIN FETCH o.orderItemList WHERE o.status = :status AND o.expiryTime < :now",
-            countQuery = "SELECT COUNT(o) FROM Order o WHERE o.status = :status AND o.expiryTime < :now")
+    @Query(value = "SELECT o FROM Order o WHERE o.status = :status AND o.expiryTime < :now")
     List<Order> findByStatusAndExpiryTimeBefore(OrderStatus status, LocalDateTime now);
 
     // 단건 주문 조회

@@ -46,7 +46,7 @@ public class FlashSaleService {
     @Transactional(readOnly = true)
     public FlashSaleListResponseDto getFlashSaleList(Long cursor, int size) {
         PageRequest pageRequest = PageRequest.of(0, size);
-        Slice<FlashSale> flashSaleList = flashSaleRepository.findAllWithProductsAndCursor(cursor, pageRequest);
+        Slice<FlashSale> flashSaleList = flashSaleRepository.findAllWithCursor(cursor, pageRequest);
 
         List<FlashSaleResponseDto> flashSaleInfoList = new ArrayList<>();
         for (FlashSale flashSale : flashSaleList) {

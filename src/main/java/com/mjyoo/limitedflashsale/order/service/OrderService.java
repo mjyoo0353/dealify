@@ -261,7 +261,7 @@ public class OrderService {
     //행사 상품 처리
     private BigDecimal processFlashSaleItem(Product product) {
         //해당 상품이 행사 상품인지 확인
-        FlashSaleItem flashSaleItem = flashSaleItemRepository.findByProductIdAndFlashSaleStatus(product.getId())
+        FlashSaleItem flashSaleItem = flashSaleItemRepository.findByProductIdAndFlashSaleStatus(product.getId(), FlashSaleStatus.ACTIVE)
                 .orElse(null);
 
         //행사 상품인 경우

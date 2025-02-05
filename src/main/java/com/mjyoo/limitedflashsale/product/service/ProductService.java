@@ -4,6 +4,7 @@ import com.mjyoo.limitedflashsale.common.util.RedisKeys;
 import com.mjyoo.limitedflashsale.common.exception.CustomException;
 import com.mjyoo.limitedflashsale.common.exception.ErrorCode;
 import com.mjyoo.limitedflashsale.flashsale.entity.FlashSaleItem;
+import com.mjyoo.limitedflashsale.flashsale.entity.FlashSaleStatus;
 import com.mjyoo.limitedflashsale.flashsale.repository.FlashSaleItemRepository;
 import com.mjyoo.limitedflashsale.product.dto.*;
 import com.mjyoo.limitedflashsale.product.entity.Product;
@@ -48,7 +49,7 @@ public class ProductService {
 
         // Cache Miss 처리 - DB 조회 후 캐시 저장
         Product product = getProductById(productId);
-        FlashSaleItem activeSaleItem = flashSaleItemRepository.findByProductIdAndFlashSaleStatus(product.getId())
+        FlashSaleItem activeSaleItem = flashSaleItemRepository.findByProductIdAndFlashSaleStatus(product.getId(), FlashSaleStatus.ACTIVE)
                 .orElse(null);
 
         // 할인 상품인 경우 할인 가격 적용
@@ -86,7 +87,7 @@ public class ProductService {
         for (Product product : productList) {
             BigDecimal price = product.getPrice();
 
-            FlashSaleItem activeSaleItem = flashSaleItemRepository.findByProductIdAndFlashSaleStatus(product.getId())
+            FlashSaleItem activeSaleItem = flashSaleItemRepository.findByProductIdAndFlashSaleStatus(product.getId(), FlashSaleStatus.ACTIVE)
                     .orElse(null);
 
             if (activeSaleItem != null) {

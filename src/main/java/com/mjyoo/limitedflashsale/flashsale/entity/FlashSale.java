@@ -1,10 +1,10 @@
 package com.mjyoo.limitedflashsale.flashsale.entity;
 
 import com.mjyoo.limitedflashsale.common.entity.Timestamped;
-import com.mjyoo.limitedflashsale.flashsale.dto.FlashSaleRequestDto;
 import com.mjyoo.limitedflashsale.flashsale.dto.FlashSaleUpdateRequestDto;
 import jakarta.persistence.*;
 import lombok.*;
+import org.hibernate.annotations.BatchSize;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -32,6 +32,7 @@ public class FlashSale extends Timestamped {
     @Enumerated(EnumType.STRING)
     private FlashSaleStatus status;
 
+    @BatchSize(size = 100)
     @OneToMany(mappedBy = "flashSale", cascade = CascadeType.ALL)
     private List<FlashSaleItem> flashSaleItemList = new ArrayList<>();
 
