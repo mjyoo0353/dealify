@@ -86,9 +86,7 @@ public class EmailVerificationService {
         log.info("Received code: {}, Redis code: {}", code, redisCode);
 
         // Redis에 저장된 인증 코드와 사용자가 입력한 인증 코드가 일치하는지 확인
-        if(redisCode != null && redisCode.equals(code)) {
-            // 5분 후에 만료되도록 설정
-            redisTemplate.opsForValue().set(RedisKeys.getSignupCodeCheck(email), code, 5, TimeUnit.MINUTES);
+        if (redisCode != null && redisCode.equals(code)) {
             log.info("Email verification successful for: {}", email);
             return true;
         }
@@ -97,7 +95,7 @@ public class EmailVerificationService {
     }
 
     public boolean isEmailVerified(String email) {
-        String key = RedisKeys.getSignupCodeCheck(email);
+        String key = RedisKeys.getSignupCode(email);
         String code = redisTemplate.opsForValue().get(key);
         return code != null;
     }

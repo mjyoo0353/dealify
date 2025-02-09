@@ -85,8 +85,22 @@ public class AuthService {
     }
 
     //로그아웃
-    public void logout(HttpServletResponse response) {
-        //쿠키에서 JWT 삭제하기 위해 쿠키 만료 설정
+    public void logout(HttpServletRequest request, HttpServletResponse response) {
+        String token = jwtUtil.getJwtFromHeader(request);
+        Claims userInfo = jwtUtil.getUserInfoFromToken(token);
+
+        if (token == null) {
+            throw new CustomException(ErrorCode.MISSING_REFRESH_TOKEN);
+        }
+
+        // 1. Redis에서 Refresh Token 삭제
+        redisTemplate.delete("email:" + userInfo.getSubject());
+
+        // 2. 쿠키에서 JWT 삭제
+        deleteCookies(response);
+    }
+
+    private void deleteCookies(HttpServletResponse response) {
         Cookie cookie = new Cookie("Authorization", null); // "Authorization"은 쿠키 이름
         cookie.setMaxAge(0); //쿠키 만료
         cookie.setPath("/"); //모든 경로에서 쿠키 접근 가능하도록 설정
