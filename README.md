@@ -19,7 +19,7 @@ Dealify transforms ordinary online shopping into an exciting time-based experien
 </h2>
 
 - Personal Project
-- Development Period: Dec. 2024 - Present
+- Development Period: Dec 18, 2024 - Feb 9, 2025
 - This project implements a scalable E-Commerce system designed to address technical challenges commonly encountered in real-world services, including:
     - Performance optimization
     - Concurrency control for limited inventory management
