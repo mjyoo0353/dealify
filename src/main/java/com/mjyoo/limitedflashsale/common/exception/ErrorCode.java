@@ -19,7 +19,7 @@ public enum ErrorCode {
 
     // Product
     PRODUCT_NOT_FOUND(HttpStatus.NOT_FOUND, "Product not found"),
-    INSUFFICIENT_STOCK(HttpStatus.BAD_REQUEST, "Insufficient stock"),
+    OUT_OF_STOCK(HttpStatus.BAD_REQUEST, "Item out of stock"),
     INVALID_STOCK(HttpStatus.BAD_REQUEST, "Invalid stock"),
 
     // Inventory
@@ -27,7 +27,6 @@ public enum ErrorCode {
 
     // Order
     ORDER_NOT_FOUND(HttpStatus.NOT_FOUND, "Order not found"),
-    OUT_OF_STOCK(HttpStatus.BAD_REQUEST, "Item out of stock"),
     LOCK_ACQUISITION_FAILURE(HttpStatus.CONFLICT, "Failed to acquire stock lock"),
     INVALID_ORDER_STATUS(HttpStatus.BAD_REQUEST, "Invalid order status"),
     ORDER_EXPIRED(HttpStatus.GONE, "Order has expired"),
@@ -36,7 +35,6 @@ public enum ErrorCode {
     CART_NOT_FOUND(HttpStatus.NOT_FOUND, "Cart not found"),
     CART_PRODUCT_NOT_FOUND(HttpStatus.BAD_REQUEST, "No items in cart"),
     INVALID_QUANTITY(HttpStatus.BAD_REQUEST, "Invalid quantity"),
-
 
     // FlashSale
     FLASH_SALE_NOT_FOUND(HttpStatus.NOT_FOUND, "Sale event not found"),

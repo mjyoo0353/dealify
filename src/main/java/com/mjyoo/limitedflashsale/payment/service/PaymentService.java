@@ -13,7 +13,6 @@ import com.mjyoo.limitedflashsale.product.service.InventoryService;
 import com.mjyoo.limitedflashsale.user.entity.User;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -26,7 +25,6 @@ public class PaymentService {
     private final PaymentRepository paymentRepository;
     private final OrderRepository orderRepository;
     private final InventoryService inventoryService;
-    private final RedisTemplate<String, Object> redisTemplate;
 
     // 결제 생성
     @Transactional
@@ -42,24 +40,17 @@ public class PaymentService {
             OrderStatus orderStatus = success ? OrderStatus.ORDERED : OrderStatus.PAYMENT_FAILED;
 
             // 결제 정보 생성
-            Payment payment = Payment.builder()
-                    .order(order)
-                    .totalAmount(order.getTotalAmount())
-                    .status(paymentStatus)
-                    .build();
-            paymentRepository.save(payment);
+            Payment payment = createPayment(order, paymentStatus);
 
             order.updatePayment(payment); // 주문에 결제 정보 설정
             order.updateStatus(orderStatus);
             orderRepository.save(order);
 
-            // 결제 실패 시 재고 복원
-            if (!success) {
-                inventoryService.restoreStock(order.getOrderItemList());
+            if (success) { // 결제 성공 시 Redis -> DB 재고 감소
+                inventoryService.decreaseStockToDB(order);
+            } else { // 결제 실패 시 Redis 재고 복원
+                inventoryService.restoreRedisStock(order);
             }
-
-            // Redis 임시 주문 정보 삭제
-            redisTemplate.delete("temp_order:" + order.getId());
 
             return PaymentResponseDto.builder()
                     .orderId(order.getId())
@@ -67,11 +58,26 @@ public class PaymentService {
                     .build();
 
         } catch (Exception e) {
-            // 에러 발생 시 재고 복원
-            log.error("Error processing payment - orderId: {}", orderId, e);
-            inventoryService.restoreStock(order.getOrderItemList());
+            // 기타 예외
+            log.error("Unexpected error during payment - orderId: {}", orderId, e);
+            handlePaymentFailure(orderId);
             throw e;
         }
+    }
+
+    // Redis에서 주문 정보 못찾을 경우 - DB 롤백, Redis 재고 복원
+    private void handlePaymentFailure(Long orderId) {
+        // DB에서 주문 정보 조회
+        Order order = orderRepository.findById(orderId)
+                .orElseThrow(() -> new CustomException(ErrorCode.ORDER_NOT_FOUND));
+
+        // Redis 재고 복원
+        inventoryService.restoreRedisStock(order);
+
+        order.updateStatus(OrderStatus.PAYMENT_FAILED);
+        orderRepository.save(order);
+
+        log.info("Payment failure handled. Restored stock - orderId: {}", orderId);
     }
 
     // 결제 검증
@@ -97,10 +103,20 @@ public class PaymentService {
         return orderRepository.save(order);
     }
 
+    private Payment createPayment(Order order, PaymentStatus paymentStatus) {
+        Payment payment = Payment.builder()
+                .order(order)
+                .totalAmount(order.getTotalAmount())
+                .status(paymentStatus)
+                .build();
+        paymentRepository.save(payment);
+        return payment;
+    }
+
     private boolean simulatePayment() {
         // 20% 확률로 결제 실패 시뮬레이션
-        //return Math.random() >= 0.2;
-        return true;
+        return Math.random() >= 0.2;
+        //return true;
     }
 
 }

@@ -38,15 +38,14 @@ public class Inventory extends Timestamped {
         this.product = product;
     }
 
-    public void decreaseStock(int quantity) {
-        if (quantity > this.stock) {
-            throw new CustomException(ErrorCode.INSUFFICIENT_STOCK);
-        }
-        this.stock -= quantity;
-    }
-
     public void restoreStock(int quantity) {
         this.stock += quantity;
     }
 
+    public void decreaseStock(int quantity) {
+        if (this.stock < quantity) {
+            throw new CustomException(ErrorCode.OUT_OF_STOCK);
+        }
+        this.stock -= quantity;
+    }
 }

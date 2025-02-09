@@ -85,20 +85,22 @@ public class OrderService {
         // 상품/재고 조회
         Product product = findActiveProductWithInventory(requestDto.getProductId());
         int quantity = requestDto.getQuantity();
-        inventoryService.decreaseStock(product, quantity);
 
+        // 레디스에서 재고 선점 (Reservation)
+        boolean isReserved = inventoryService.reserveStockToRedis(product, quantity);
+        if(!isReserved) {
+            throw new CustomException(ErrorCode.OUT_OF_STOCK);
+        }
+
+        //행사 상품인지 확인
         BigDecimal priceToApply;
         boolean isFlashSaleItem = false;
-
-        //해당 상품이 행사 상품인지 확인
         BigDecimal flashSalePrice = processFlashSaleItem(product);
 
-        //행사상품이면 할인된 가격 적용
-        if (flashSalePrice != null) {
+        if (flashSalePrice != null) { //행사상품이면 할인된 가격 적용
             priceToApply = flashSalePrice;
             isFlashSaleItem = true;
-        } else {
-            //행사 상품이 아닌 경우 일반 가격 적용
+        } else { //행사 상품이 아닌 경우 일반 가격 적용
             priceToApply = product.getPrice();
         }
 
@@ -138,8 +140,12 @@ public class OrderService {
 
             //상품 조회
             Product product = findActiveProductWithInventory(productId);
-            //재고 차감 및 레디스 재고 업데이트
-            inventoryService.decreaseStock(product, quantity);
+
+            // 레디스에서 재고 선점 (Reservation)
+            boolean isReserved = inventoryService.reserveStockToRedis(product, quantity);
+            if(!isReserved) {
+                throw new CustomException(ErrorCode.OUT_OF_STOCK);
+            }
 
             BigDecimal priceToApply;
             boolean isFlashSaleItem = false;
@@ -178,19 +184,22 @@ public class OrderService {
         //주문 조회
         Order order = findOrderById(orderId);
 
+        //주문 상태 확인
         if (OrderStatus.CANCELED.equals(order.getStatus())) {
             throw new CustomException(ErrorCode.INVALID_ORDER_STATUS);
         }
 
         // 주문 취소 권한 확인
         findOrderByUser(user, order);
-        // 주문/결제 상태 변경
-        order.updateStatus(OrderStatus.CANCELED);
-        order.getPayment().setStatus(PaymentStatus.CANCELED);
 
-        //취소된 주문에 대한 모든 상품 처리
-        inventoryService.restoreStock(order.getOrderItemList());
-        orderRepository.save(order);
+        // 주문/결제 상태 업데이트
+        order.updateStatus(OrderStatus.CANCELED);
+        order.getPayment().updateStatus(PaymentStatus.CANCELLED);
+
+        // Redis + DB 재고 복원
+        inventoryService.restoreStockOnCancel(order);
+
+        log.info("Order canceled: {}", order.getId());
     }
 
 /// -------------------------------------------- private method -------------------------------------------- ///
@@ -238,7 +247,7 @@ public class OrderService {
         Order order = Order.builder()
                 .user(user)
                 .status(OrderStatus.ORDER_PROCESSING)
-                .expiryTime(LocalDateTime.now().plusMinutes(5)) // 5분 후 만료
+                .expiryTime(LocalDateTime.now().plusMinutes(10)) // 10분 후 만료
                 .orderItemList(new ArrayList<>())
                 .build();
         orderRepository.save(order);

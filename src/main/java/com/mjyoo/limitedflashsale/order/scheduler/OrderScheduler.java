@@ -29,11 +29,12 @@ public class OrderScheduler {
     @Transactional
     public void processExpiredOrders() {
         log.info("Starting to process expired orders...");
+
         // 만료된 주문 조회
         List<Order> expiredOrders = orderRepository.findByStatusAndExpiryTimeBefore(OrderStatus.ORDER_PROCESSING, LocalDateTime.now());
         for (Order order : expiredOrders) {
             try {
-                inventoryService.restoreStock(order.getOrderItemList());
+                inventoryService.restoreRedisStock(order);
                 orderRepository.delete(order);
                 log.info("Expired order processed - orderId: {}", order.getId());
             } catch (Exception e) {
