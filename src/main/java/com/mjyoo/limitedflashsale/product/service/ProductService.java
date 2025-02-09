@@ -39,33 +39,34 @@ public class ProductService {
     // 단건 Active 상품 조회 (재고 정보 포함)
     @Transactional(readOnly = true)
     public ProductResponseDto getProduct(Long productId) {
-        // 캐시에서 상품 정보 조회
-        String key = RedisKeys.getProductCacheKey(productId);
-        ProductResponseDto cachedProduct = (ProductResponseDto) redisTemplate.opsForValue().get(key);
-
-        if (cachedProduct != null) {
-            return cachedProduct;
-        }
-
-        // Cache Miss 처리 - DB 조회 후 캐시 저장
-        Product product = getProductById(productId);
-        FlashSaleItem activeSaleItem = flashSaleItemRepository.findByProductIdAndFlashSaleStatus(product.getId(), FlashSaleStatus.ACTIVE)
+        // FlashSale 상품 조회
+        FlashSaleItem activeSaleItem = flashSaleItemRepository.findByProductIdAndFlashSaleStatus(productId, FlashSaleStatus.ACTIVE)
                 .orElse(null);
 
-        // 할인 상품인 경우 할인 가격 적용
-        ProductResponseDto productInfo =
-                activeSaleItem != null ? new ProductResponseDto(product, activeSaleItem)
-                        : new ProductResponseDto(product);
+        // FlashSale 상품인 경우에만 캐싱 로직 적용
+        if (activeSaleItem != null) {
+            // 캐시에서 상품 정보 조회
+            String key = RedisKeys.getProductCacheKey(productId);
+            ProductResponseDto cachedProduct = (ProductResponseDto) redisTemplate.opsForValue().get(key);
 
-        // 일반 상품은 캐시 만료 시간 10분, 행사 상품은 행사 종료 시간까지
-        Duration ttl =
-                activeSaleItem != null ? Duration.between(LocalDateTime.now(), activeSaleItem.getFlashSale().getEndTime())
-                        : Duration.ofMinutes(10);
+            if (cachedProduct != null) {
+                return cachedProduct;
+            }
 
-        // 캐시 저장
-        redisTemplate.opsForValue().set(key, productInfo, ttl);
+            // Cache Miss 처리 - DB 조회 후 캐시 저장
+            Product product = getProductById(productId);
+            ProductResponseDto productInfo = new ProductResponseDto(product, activeSaleItem);
 
-        return productInfo;
+            // 행사 종료 시간까지 캐싱
+            Duration ttl = Duration.between(LocalDateTime.now(), activeSaleItem.getFlashSale().getEndTime());
+            redisTemplate.opsForValue().set(key, productInfo, ttl);
+
+            return productInfo;
+        }
+
+        // 일반 상품은 DB에서 직접 조회
+        Product product = getProductById(productId);
+        return new ProductResponseDto(product);
     }
 
     /*public ProductResponseDto getProductDB(Long productId) {
@@ -137,7 +138,8 @@ public class ProductService {
         Product product = new Product(requestDto, stock);
         productRepository.save(product);
 
-        inventoryService.setStock(product.getId(), stock);
+        // Redis 재고 정보 업데이트
+        inventoryService.updateStockInRedis(product.getId(), stock);
         return new ProductResponseDto(product);
     }
 
@@ -152,10 +154,6 @@ public class ProductService {
         product.getInventory().updateStock(stock, product);
 
         try {
-            String productKey = RedisKeys.getProductCacheKey(productId);
-            // 상품 정보 캐시 무효화 (삭제)
-            redisTemplate.delete(productKey);
-
             // 재고 정보 캐시 업데이트
             inventoryService.updateStockInRedis(productId, stock);
         } catch (Exception e) {
@@ -171,6 +169,8 @@ public class ProductService {
 
         Product product = getProductById(productId);
         product.updateToDelete(true); // soft delete 상태로 변경
+
+        // Redis 재고 정보 삭제
         redisTemplate.delete(RedisKeys.getInventoryCacheKey(productId));
         productRepository.save(product);
     }
