@@ -61,15 +61,14 @@ Dealify transforms ordinary online shopping into an exciting time-based experien
     <b>📌 System Architecture</b>
 </h2>
 
-![System Architecture](https://github.com/user-attachments/assets/1212881a-3a61-4eb0-91b2-6cbd10cad844)
+![System Architecture](https://github.com/user-attachments/assets/4286dbb9-1d51-425b-a71f-a5e3a9443cc3)
 
 ----
 <h2 id="3">
     <b>📌 ERD</b>
 </h2>
 
-![ERD](https://github.com/user-attachments/assets/44e4e83c-b2c8-4d84-98ea-eaaa54f26648)
-
+![ERD](https://github.com/user-attachments/assets/99549f12-a699-4e5c-a0e9-2657f2bdaef9)
 
 ----
 <h2 id="4">
@@ -133,7 +132,7 @@ Dealify transforms ordinary online shopping into an exciting time-based experien
 - **Reduced DB Load** : Optimized database load management
 - **Inventory query response times dropped by 92% with 156% increased throughput**
   
-<img width="650" alt="재고 조회 성능 테스트 표_최종" src="https://github.com/user-attachments/assets/b327616e-2bff-4676-a517-eb1a919c78f3" />
+<img width="650" alt="Image" src="https://github.com/user-attachments/assets/e2074dbb-fc53-4ad6-97d5-1d73888bd639" />
 
 <h2></h2>
 
@@ -156,7 +155,7 @@ Dealify transforms ordinary online shopping into an exciting time-based experien
 - **N+1 Queries Removed** : Decreased query count from N+1 to a single query per request
 - **Achieved a 64% reduction in average response time** under a 5,000 concurrent user load test
 
-<img width="650" alt="행사 조회 성능 테스트 표" src="https://github.com/user-attachments/assets/e9f91962-f35f-4a45-9853-c1e47dcda122" />
+<img width="650" alt="Image" src="https://github.com/user-attachments/assets/40c896c5-b956-4776-a72d-49656fae8838" />
 
 <h2></h2>
 
@@ -177,7 +176,7 @@ Dealify transforms ordinary online shopping into an exciting time-based experien
 - Successfully **implemented Redis Lua Script**, achieving:
     - **70.3% reduction in response time and 205% increase in throughput**
  
-<img width="700" alt="정합성 테스트 표1" src="https://github.com/user-attachments/assets/1021ad6d-573e-4f77-a6db-e016b7b26176" />
+<img width="700" alt="Image" src="https://github.com/user-attachments/assets/d5211a2f-955a-4251-a059-204a39df5d1d" />
 
 <br>
 
@@ -203,6 +202,6 @@ Dealify transforms ordinary online shopping into an exciting time-based experien
 - **Data Consistency** : Achieved 100% accuracy in concurrent order processing
 - **Lock Contention** : Eliminated timeout failures with 0% occurrence rate
 
-<img width="400" alt="정합성 테스트 표2" src="https://github.com/user-attachments/assets/f576918d-06de-40ea-bbc4-b6df3beb8597" />
+<img width="400" alt="Image" src="https://github.com/user-attachments/assets/a40b6fd9-9988-4b02-9cfd-28cec729c404" />
 
 <br>
